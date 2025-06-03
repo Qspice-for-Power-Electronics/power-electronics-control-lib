@@ -1,0 +1,66 @@
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.obj
+*.slo
+*.lo
+*.o
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.dll
+*.so
+*.dylib
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lib
+*.a
+
+# Executables
+*.exe
+*.out
+*.app
+
+# Debug files
+*.dSYM/
+*.su
+*.idb
+*.pdb
+
+# QSPICE output files
+*.qraw
+*.qopraw
+
+# Build artifacts
+build/
+*.map
+*.obj
+*.dll
+*.lib
+*.exp
+
+# IDE specific
+.vs/
+.vscode/
+*.swp
+*.swo
+
+# OS specific
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Backup files
+*~
+*.bak
+
+# Log files
+*.log
