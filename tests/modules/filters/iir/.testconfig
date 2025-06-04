@@ -1,0 +1,13 @@
+{
+    "module": "iir",
+    "include_paths": [
+        "src/modules/filters/iir"
+    ],
+    "source_files": [
+        "src/modules/filters/iir/iir.cpp"
+    ],
+    "test_files": [
+        "tests/modules/filters/iir/test_iir.cpp"
+    ],
+    "dependencies": []
+}

@@ -89,7 +89,62 @@ Located in `src/modules/qspice_modules/`, contains QSPICE-specific implementatio
 - Configuration is in `config/.clang-format`
 
 ### Testing
-Each module has its corresponding test directory under `tests/modules/`
+
+#### PowerShell Execution Policy
+Before running tests, you may need to adjust PowerShell's execution policy. You have two options:
+
+1. **Temporary Policy Override (Recommended)**
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File .\scripts\run_tests.ps1
+   ```
+
+2. **Permanent Policy Change** (Administrative PowerShell)
+   ```powershell
+   Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+   ```
+
+#### Running Tests
+
+1. **Run All Tests**
+   ```powershell
+   .\scripts\run_tests.ps1
+   ```
+   Or with execution policy bypass:
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File .\scripts\run_tests.ps1
+   ```
+
+2. **Test Specific Module**
+   ```powershell
+   .\scripts\run_tests.ps1 -Module pwm
+   ```
+
+3. **Show Detailed Output**
+   ```powershell
+   .\scripts\run_tests.ps1 -ShowOutput
+   ```
+
+#### Test Structure
+- Each module has its own test directory under `tests/modules/`
+- Test files are named `test_*.cpp`
+- Module tests are configured via `.testconfig` files
+
+#### Available Test Suites
+- **PWM Tests**: Verify PWM signal generation and timing
+- **IIR Filter Tests**: Validate filter response and stability
+- **Power Electronics Tests**: Integration tests for complete system
+
+#### Test Configuration
+Each module's `.testconfig` file specifies:
+- Include paths
+- Source files
+- Dependencies
+- Test files
+
+#### CI/CD Integration
+- Tests run automatically on push to master
+- Test results available in GitHub Actions
+- Artifacts uploaded for successful builds
 
 ### Contributing
 Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests.

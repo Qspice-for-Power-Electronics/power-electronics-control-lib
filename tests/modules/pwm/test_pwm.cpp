@@ -1,4 +1,4 @@
-#include "pecl/pwm.h"
+#include "pwm/pwm.h"
 #include <assert.h>
 #include <math.h>
 

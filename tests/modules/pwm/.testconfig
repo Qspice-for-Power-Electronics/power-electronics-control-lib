@@ -1,0 +1,13 @@
+{
+    "module": "pwm",
+    "include_paths": [
+        "src"
+    ],
+    "source_files": [
+        "src/modules/pwm/pwm.cpp"
+    ],
+    "test_files": [
+        "tests/modules/pwm/test_pwm.cpp"
+    ],
+    "dependencies": []
+}
