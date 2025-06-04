@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Install Digital Mars C++
+      run: |
+        Invoke-WebRequest -Uri "https://digitalmars.com/download/freecompiler.html" -OutFile "dmc.zip"
+        Expand-Archive dmc.zip -DestinationPath C:\dmc
+        echo "C:\dmc\dm\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
+    
+    - name: Install LLVM
+      uses: KyleMayes/install-llvm-action@v1
+      with:
+        version: "13.0"
+    
+    - name: Build
+      run: |
+        .\build_all.bat
+        if ($LASTEXITCODE -ne 0) {
+          throw "Build failed with exit code $LASTEXITCODE"
+        }
+    
+    - name: Run Tests
+      run: |
+        .\scripts\run_tests.ps1
+        if ($LASTEXITCODE -ne 0) {
+          throw "Tests failed with exit code $LASTEXITCODE"
+        }
+    
+    - name: Upload Build Artifacts
+      if: success()
+      uses: actions/upload-artifact@v2
+      with:
+        name: qspice-modules
+        path: |
+          ctrl.dll
+          build/*.obj
+        
+    - name: Upload Test Results
+      if: always()
+      uses: actions/upload-artifact@v2
+      with:
+        name: test-results
+        path: tests/**/test_*.cpp

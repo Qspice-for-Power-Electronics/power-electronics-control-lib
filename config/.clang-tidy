@@ -1,0 +1,18 @@
+---
+Checks: >
+  clang-diagnostic-*,
+  clang-analyzer-*,
+  modernize-*,
+  performance-*,
+  portability-*,
+  readability-*,
+  -modernize-use-trailing-return-type
+WarningsAsErrors: ''
+HeaderFilterRegex: '.*'
+AnalyzeTemporaryDtors: false
+FormatStyle: file
+CheckOptions:
+  - key: readability-identifier-length.MinimumVariableNameLength
+    value: 2
+  - key: readability-identifier-length.MinimumParameterNameLength
+    value: 2

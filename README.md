@@ -12,26 +12,64 @@ A comprehensive collection of control modules and utilities for power electronic
 ## Project Structure
 
 ```
-├── config/               # Configuration files
-│   └── .clang-format    # C++ code formatting rules
-├── src/                 # Source code
-│   └── modules/         # Modular components
-│       ├── filters/     # Signal processing filters
-│       │   └── iir/     # IIR filter implementation
-│       ├── qspice_modules/ # QSPICE-specific modules
-│       └── pwm/         # PWM generation modules
-├── tests/               # Test files
-│   └── modules/         # Module-specific tests
-└── build_all.bat       # Build script
+├── build/              # Build artifacts
+├── config/             # Configuration files
+│   └── .clang-format  # Code formatting rules
+├── docs/              # Documentation
+│   └── api/          # API documentation
+├── src/              # Source code
+│   └── modules/      # Modular components
+│       ├── filters/  # Signal processing filters
+│       │   └── iir/  # IIR filter module
+│       │       ├── iir.h
+│       │       ├── iir.cpp
+│       │       └── iir.def
+│       ├── pwm/      # PWM generation module
+│       │   ├── pwm.h
+│       │   ├── pwm.cpp
+│       │   └── pwm.def
+│       └── qspice_modules/ # QSPICE integration
+│           ├── ctrl.cpp
+│           └── ctrl.def
+├── tests/           # Test files
+│   └── modules/     # Module tests
+└── build_all.bat   # Build script
 ```
 
 ## Building the Project
 
-To build the project:
+### Prerequisites
 
-1. Make sure Digital Mars C++ compiler (DMC) is installed and in your PATH
-2. Make sure LLVM/Clang is installed for code formatting
-3. Run `build_all.bat`
+1. **Digital Mars C++ (DMC) Compiler**
+   - Download from [Digital Mars website](https://digitalmars.com/download/freecompiler.html)
+   - Add the DMC bin directory to your system PATH
+   - Verify installation: Run `dmc -v` in terminal
+
+2. **LLVM/Clang**
+   - Download LLVM from [LLVM releases](https://releases.llvm.org/)
+   - Add LLVM bin directory to your system PATH
+   - Verify installation: Run `clang-format --version` in terminal
+
+### Building
+
+1. Open PowerShell in the project directory
+2. Run the build script:
+   ```powershell
+   .\build_all.bat
+   ```
+3. The script will:
+   - Format all source files using clang-format
+   - Compile all .cpp files into object files
+   - Link them into ctrl.dll
+   - Place build artifacts in the `build` directory
+   - Copy the final DLL to the root directory
+
+### Build Output
+- `ctrl.dll`: The main library file (in root directory)
+- Build artifacts (in `build` directory):
+  - `.obj` files: Compiled object files
+  - `.map` file: Linker map file
+  - `.def` file: Module definition file
 
 ## Modules
 
