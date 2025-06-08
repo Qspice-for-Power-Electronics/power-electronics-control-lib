@@ -1,3 +1,5 @@
+**In The Name Of God** - May this work contribute to the betterment of humanity and the advancement of science and technology.
+
 # Power Electronics Control Library
 
 A modular C++ library for power electronics control, designed for seamless QSPICE integration with automatic compiler setup and comprehensive development tools.
@@ -6,8 +8,8 @@ A modular C++ library for power electronics control, designed for seamless QSPIC
 
 1. **Clone the repository**
    ```bash
-   git clone <your-repo-url>
-   cd power-electronics-library
+   git clone https://github.com/Qspice-for-Power-Electronics/power-electronics-control-lib.git
+   cd power-electronics-control-lib
    ```
 
 2. **Open in VS Code**
@@ -453,4 +455,6 @@ python scripts\project_config.py --qspice-modules
 - Follow existing naming conventions
 
 ## License
-[Your license information here]
+
+This work is dedicated to the public domain under CC0 1.0.
+Please use it for good and beneficial purposes!

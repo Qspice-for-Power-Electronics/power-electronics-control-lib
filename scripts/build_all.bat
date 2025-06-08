@@ -1,3 +1,4 @@
+@echo off
 REM *************************** In The Name Of God ***************************
 REM * @file    build_all.bat
 REM * @brief   Batch script for building all power electronics modules
@@ -10,7 +11,6 @@ REM * @license This work is dedicated to the public domain under CC0 1.0.
 REM *          Please use it for good and beneficial purposes!
 REM ***************************************************************************
 
-@echo off
 REM ================================================================================
 REM Power Electronics Control Library - Build Script
 REM ================================================================================
