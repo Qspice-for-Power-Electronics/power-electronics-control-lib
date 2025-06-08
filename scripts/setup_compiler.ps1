@@ -150,6 +150,13 @@ function Find-CommonDmcLocations {
     )
     
     foreach ($Path in $CommonPaths) {
+        # Check if the drive exists before testing the path
+        $Drive = Split-Path $Path -Qualifier
+        if (!(Test-Path $Drive)) {
+            Write-Status "Skipping non-existent drive: $Drive" "Yellow"
+            continue
+        }
+        
         $DmcExe = Join-Path $Path "bin\dmc.exe"
         $IncludeDir = Join-Path $Path "include"
         
