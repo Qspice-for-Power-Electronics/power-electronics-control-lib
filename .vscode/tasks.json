@@ -1,0 +1,160 @@
+// *************************** In The Name Of God ***************************
+// * @file    tasks.json
+// * @brief   VS Code tasks configuration for power electronics control library
+// * @author  Dr.-Ing. Hossein Abedini
+// * @date    2025-06-08
+// * This file defines automated tasks for building, cleaning, and maintaining
+// * the C++ power electronics control library for QSPICE integration.
+// * @note    Designed for real-time signal processing applications.
+// * @license This work is dedicated to the public domain under CC0 1.0.
+// *          Please use it for good and beneficial purposes!
+// ***************************************************************************
+
+{
+    // VS Code Tasks Configuration for Power Electronics Control Library
+    // 
+    // This file defines automated tasks for building, cleaning, and maintaining
+    // the C++ power electronics control library for QSPICE integration.
+    //
+    // HOW TO RUN TASKS:
+    // Method 1: Press Ctrl+Shift+P → "Tasks: Run Task" → Select task
+    // Method 2: Terminal menu → "Run Task..." → Select task  
+    // Method 3: Use keyboard shortcuts if configured    //
+    // AVAILABLE TASKS:
+    // 1. "Setup Compiler" - Downloads and installs Digital Mars Compiler if not present
+    // 2. "Clean Build Artifacts" - Removes all build outputs and temporary files
+    // 3. "Code Cleanup" - Runs automated code formatting and const correctness checks
+    // 4. "Build All Modules" - Builds all power electronics and QSPICE modules
+      "version": "2.0.0",
+    "tasks": [
+        {
+            // TASK 1: Setup Compiler
+            // Purpose: Downloads and installs Digital Mars Compiler if not present
+            // Usage: Run this first on a fresh clone to setup the build environment
+            // Features:
+            //   - Automatic download from GitHub releases or backup URL
+            //   - Verification of existing installation
+            //   - Force re-download option available
+            //   - Handles extraction and proper directory structure
+            // Requirements: Internet connection, PowerShell 5.0+
+            // Source: Downloads from official DigitalMars repositories
+            "label": "Setup Compiler",
+            "type": "shell",
+            "command": "powershell.exe",
+            "args": [
+                "-ExecutionPolicy", "Bypass",
+                "-File", "${workspaceFolder}/scripts/setup_compiler.ps1"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared",
+                "clear": true
+            },
+            "detail": "Download and install Digital Mars Compiler if not present"        },
+        {
+            // TASK 2: Clean Build Artifacts
+            // Purpose: Removes all build outputs and temporary files to ensure clean builds
+            // Usage: Run before building to clean previous outputs
+            // What it cleans:
+            //   - build/ directory (complete removal)
+            //   - *.dll files (compiled modules)
+            //   - *.map files (linker map files)
+            //   - *.obj files (object files)  
+            //   - *.bak files (backup files)
+            // Command: Uses Windows cmd for reliable file operations
+            "label": "Clean Build Artifacts",
+            "type": "shell", 
+            "command": "cmd",
+            "args": [
+                "/c",
+                "if exist build rmdir /s /q build && del /f /q *.dll *.map *.obj *.bak 2>nul && echo Build artifacts cleaned"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "detail": "Clean all build artifacts and output files"        },
+        {
+            // TASK 3: Code Cleanup
+            // Purpose: Runs comprehensive code quality improvements
+            // Features:
+            //   - Clang-tidy analysis for const correctness
+            //   - Code formatting and style consistency  
+            //   - Include header cleanup and optimization
+            //   - Automated code quality suggestions
+            // Usage: Run periodically to maintain code quality
+            // Requirements: Clang-tidy must be installed and in PATH
+            // Note: Runs in dry-run mode by default (preview changes only)
+            "label": "Code Cleanup",
+            "type": "shell",
+            "command": "${workspaceFolder}/scripts/cleanup_code.bat",
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "detail": "Run comprehensive code cleanup including const correctness and formatting"        },
+        {
+            // TASK 4: Build All Modules
+            // Purpose: Compiles all power electronics and QSPICE modules using Digital Mars Compiler
+            // Usage: This is the default build task (Ctrl+Shift+B)
+            // Output: Creates .dll files in build/ directory for QSPICE integration
+            // Requirements: Digital Mars Compiler (DMC) must be in PATH
+            "label": "Build All Modules",
+            "type": "shell",
+            "command": "${workspaceFolder}/scripts/build_all.bat",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "detail": "Build all power electronics and QSPICE modules using Digital Mars Compiler"
+        },
+        {           
+             // TASK 5: Add Macro Parentheses
+            // Purpose: Automatically adds parentheses around #define values for safer macro definitions
+            // Features:
+            //   - Scans all source files for #define statements
+            //   - Adds parentheses around values that don't already have them
+            //   - Preserves existing parentheses and string literals
+            //   - Shows dry-run preview before applying changes
+            // Usage: Run when you want to improve macro safety
+            // Best Practice: This prevents operator precedence issues in macro expansions
+            // Example: #define VALUE 1+2 → #define VALUE (1+2)
+            "label": "Add Macro Parentheses",
+            "type": "shell",
+            "command": "powershell.exe",
+            "args": [
+                "-ExecutionPolicy", "Bypass",
+                "-File", "${workspaceFolder}/scripts/add_macro_parentheses.ps1"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared",
+                "clear": true
+            },
+            "detail": "Add parentheses around #define values for safer macro definitions"
+        }
+    ]
+}

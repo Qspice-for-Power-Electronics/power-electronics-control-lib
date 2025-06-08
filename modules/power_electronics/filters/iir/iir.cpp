@@ -1,16 +1,22 @@
-// ***************************************************************************
-// * @file    iir.cpp
-// * @brief   Digital IIR filter module implementation for lowpass/highpass filtering.
-// * @author  Hossein Abedini
-// * @date    2025-06-01
-// *
-// * Implements a configurable first-order IIR filter (lowpass/highpass).
-// ***************************************************************************
+/**
+ * *************************** In The Name Of God ***************************
+ * @file    iir.cpp
+ * @brief   Digital IIR filter module implementation for lowpass/highpass filtering
+ * @author  Dr.-Ing. Hossein Abedini
+ * @date    2025-06-01
+ * Implements a configurable first-order IIR filter (lowpass/highpass).
+ * @note    Designed for real-time signal processing applications.
+ * @license This work is dedicated to the public domain under CC0 1.0.
+ *          Please use it for good and beneficial purposes!
+ ***************************************************************************/
 
 /********************************* INCLUDES **********************************/
 #include "iir.h"
+#include "math_constants.h"
 #include <assert.h>
 #include <math.h>
+
+/********************************* DEFINES ***********************************/
 
 /**************************** PUBLIC FUNCTIONS *******************************/
 
@@ -22,7 +28,7 @@
  */
 float iir_calc_a(float Ts, float fc)
 {
-    float x = 2.0f * (float)M_PI * Ts * fc;
+    float const x = 2.0f * (float)M_PI * Ts * fc;
     return x / (x + 1.0f);
 }
 
@@ -32,7 +38,7 @@ float iir_calc_a(float Ts, float fc)
  * @param   mod     Pointer to the IIR filter module instance.
  * @param   params  Pointer to parameters, or NULL for defaults.
  */
-void iir_module_init(IirModule *mod, const IirParams *params)
+void iir_module_init(IirModule* mod, const IirParams* params)
 {
     if (params)
     {
@@ -43,7 +49,7 @@ void iir_module_init(IirModule *mod, const IirParams *params)
     else
     {
 #ifdef _MSC_VER
-        __debugbreak(); // MSVC: trigger a debug break if params is not provided
+        __debugbreak();  // MSVC: trigger a debug break if params is not provided
 #else
         assert(params && "iir_module_init: params must not be NULL");
 #endif
@@ -51,8 +57,8 @@ void iir_module_init(IirModule *mod, const IirParams *params)
     }
     mod->state.y_prev = 0.0f;
     mod->state.u_prev = 0.0f;
-    mod->in.u = 0.0f;
-    mod->out.y = 0.0f;
+    mod->in.u         = 0.0f;
+    mod->out.y        = 0.0f;
 }
 
 /**
@@ -60,11 +66,11 @@ void iir_module_init(IirModule *mod, const IirParams *params)
  * state and inputs.
  * @param   mod     Pointer to the IIR filter module instance.
  */
-void iir_module_step(IirModule *mod)
+void iir_module_step(IirModule* mod)
 {
-    float a = mod->params.a;
-    float u = mod->in.u;
-    float y = 0.0f;
+    float const a = mod->params.a;
+    float const u = mod->in.u;
+    float       y = 0.0f;
     if (mod->params.type == 0)
     {
         // Lowpass: y(k) = a*u(k) + (1-a)*y(k-1)
@@ -75,7 +81,7 @@ void iir_module_step(IirModule *mod)
         // Highpass: y(k) = (1-a)*(u(k)-u(k-1)+y(k-1))
         y = (1.0f - a) * (u - mod->state.u_prev + mod->state.y_prev);
     }
-    mod->out.y = y;
+    mod->out.y        = y;
     mod->state.y_prev = y;
     mod->state.u_prev = u;
 }
