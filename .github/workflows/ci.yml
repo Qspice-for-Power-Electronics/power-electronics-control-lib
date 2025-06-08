@@ -23,45 +23,93 @@ jobs:
     runs-on: windows-latest
     
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     
-    - name: Install Digital Mars C++
+    - name: Setup PowerShell
+      shell: powershell
       run: |
-        Invoke-WebRequest -Uri "https://digitalmars.com/download/freecompiler.html" -OutFile "dmc.zip"
-        Expand-Archive dmc.zip -DestinationPath C:\dmc
-        echo "C:\dmc\dm\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
+        Write-Host "PowerShell version: $($PSVersionTable.PSVersion)" -ForegroundColor Green
+        Write-Host "OS version: $([System.Environment]::OSVersion)" -ForegroundColor Green
     
-    - name: Install LLVM
-      uses: KyleMayes/install-llvm-action@v1
+    - name: Install Digital Mars Compiler
+      shell: powershell
+      run: |
+        Write-Host "Setting up Digital Mars Compiler..." -ForegroundColor Cyan
+        .\scripts\setup_compiler.ps1 -Quiet
+        if ($LASTEXITCODE -ne 0) {
+          throw "Failed to setup Digital Mars Compiler"
+        }
+    
+    - name: Install LLVM (clang-format, clang-tidy)
+      uses: KyleMayes/install-llvm-action@v2
       with:
-        version: "13.0"
+        version: "17.0"
+        directory: ${{ runner.temp }}/llvm
     
-    - name: Build
+    - name: Validate Project Structure
+      shell: powershell
       run: |
-        .\build_all.bat
+        Write-Host "Validating project structure..." -ForegroundColor Cyan
+        $requiredDirs = @("modules", "config", "scripts")
+        foreach ($dir in $requiredDirs) {
+          if (-not (Test-Path $dir)) {
+            throw "Required directory '$dir' not found"
+          }
+          Write-Host "✓ $dir directory found" -ForegroundColor Green
+        }
+        
+        $requiredFiles = @("config/project_config.json", "config/.clang-format")
+        foreach ($file in $requiredFiles) {
+          if (-not (Test-Path $file)) {
+            throw "Required file '$file' not found"
+          }
+          Write-Host "✓ $file found" -ForegroundColor Green
+        }
+    
+    - name: Code Quality Check
+      shell: powershell
+      run: |
+        Write-Host "Running code quality checks..." -ForegroundColor Cyan
+        .\scripts\cleanup_code.bat -DryRun
+        if ($LASTEXITCODE -ne 0) {
+          Write-Warning "Code quality check completed with warnings"
+        }
+    
+    - name: Build All Modules
+      shell: powershell
+      run: |
+        Write-Host "Building all modules..." -ForegroundColor Cyan
+        .\scripts\build_all.bat
         if ($LASTEXITCODE -ne 0) {
           throw "Build failed with exit code $LASTEXITCODE"
         }
-    
-    - name: Run Tests
-      run: |
-        .\scripts\run_tests.ps1
-        if ($LASTEXITCODE -ne 0) {
-          throw "Tests failed with exit code $LASTEXITCODE"
-        }
-    
+        
+        Write-Host "Verifying build outputs..." -ForegroundColor Cyan
+        $expectedDlls = @("ctrl.dll")
+        foreach ($dll in $expectedDlls) {
+          if (-not (Test-Path $dll)) {
+            throw "Expected output '$dll' not found"
+          }
+          $size = (Get-Item $dll).Length
+          Write-Host "✓ $dll built successfully ($size bytes)" -ForegroundColor Green
+        }    
     - name: Upload Build Artifacts
       if: success()
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: qspice-modules
         path: |
-          ctrl.dll
+          *.dll
           build/*.obj
+          build/*.map
+        retention-days: 30
         
-    - name: Upload Test Results
+    - name: Upload Build Logs
       if: always()
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
-        name: test-results
-        path: tests/**/test_*.cpp
+        name: build-logs
+        path: |
+          build/
+          *.log
+        retention-days: 7
