@@ -1,3 +1,16 @@
+<!-- ************************** In The Name Of God ************************** -->
+<!-- * @file    module_request.md                                             -->
+<!-- * @brief   GitHub issue template for requesting new power electronics    -->
+<!-- *          modules                                                       -->
+<!-- * @author  Dr.-Ing. Hossein Abedini                                     -->
+<!-- * @date    2025-06-08                                                    -->
+<!-- * Template for standardized module requests to ensure consistency       -->
+<!-- * in module development and documentation.                              -->
+<!-- * @note    Designed for real-time signal processing applications.       -->
+<!-- * @license This work is dedicated to the public domain under CC0 1.0.   -->
+<!-- *          Please use it for good and beneficial purposes!              -->
+<!-- ************************************************************************* -->
+
 ---
 name: Module Request
 about: Suggest a new control module for the library

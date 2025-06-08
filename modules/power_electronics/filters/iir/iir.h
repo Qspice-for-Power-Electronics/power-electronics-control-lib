@@ -1,11 +1,15 @@
-// ***************************************************************************
-// * @file    iir.h
-// * @brief   Digital IIR filter module interface for lowpass/highpass filtering.
-// * @author  Hossein Abedini
-// * @date    2025-06-01
-// *
-// * Provides types and functions for a configurable first-order IIR filter (lowpass/highpass).
-// ***************************************************************************
+/**
+ * *************************** In The Name Of God ***************************
+ * @file    iir.h
+ * @brief   Digital IIR filter module interface for lowpass/highpass filtering
+ * @author  Dr.-Ing. Hossein Abedini
+ * @date    2025-06-01
+ * Provides types and functions for a configurable first-order IIR filter
+ * (lowpass/highpass).
+ * @note    Designed for real-time signal processing applications.
+ * @license This work is dedicated to the public domain under CC0 1.0.
+ *          Please use it for good and beneficial purposes!
+ ***************************************************************************/
 
 #ifndef IIR_H
 #define IIR_H
@@ -30,8 +34,8 @@ extern "C"
     {
         float Ts;
         float fc;
-        int type; // 0 = lowpass, 1 = highpass
-        float a;  // filter coefficient
+        int   type;  // 0 = lowpass, 1 = highpass
+        float a;     // filter coefficient
     } IirParams;
 
     /**
@@ -68,9 +72,9 @@ extern "C"
      */
     typedef struct
     {
-        IirParams params;
-        IirState state;
-        IirInputs in;
+        IirParams  params;
+        IirState   state;
+        IirInputs  in;
         IirOutputs out;
     } IirModule;
 
@@ -81,14 +85,14 @@ extern "C"
      * @param   mod     Pointer to the IIR filter module instance.
      * @param   params  Pointer to parameters (must not be NULL).
      */
-    void iir_module_init(IirModule *mod, const IirParams *params);
+    void iir_module_init(IirModule* mod, const IirParams* params);
 
     /**
      * @brief   Advances the IIR filter module by one step, updating the output based on the current
      * state and inputs.
      * @param   mod     Pointer to the IIR filter module instance.
      */
-    void iir_module_step(IirModule *mod);
+    void iir_module_step(IirModule* mod);
 
     /**
      * @brief   Calculate the IIR filter coefficient 'a' for a given sample time and cutoff
@@ -103,4 +107,4 @@ extern "C"
 }
 #endif
 
-#endif // IIR_H
+#endif  // IIR_H

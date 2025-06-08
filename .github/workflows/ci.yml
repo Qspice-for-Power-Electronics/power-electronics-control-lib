@@ -1,3 +1,15 @@
+# *************************** In The Name Of God ***************************
+# * @file    ci.yml
+# * @brief   Continuous Integration workflow for WPT project
+# * @author  Dr.-Ing. Hossein Abedini
+# * @date    2025-06-08
+# * GitHub Actions workflow for automated building and testing of power
+# * electronics modules using Digital Mars Compiler on Windows.
+# * @note    Designed for real-time signal processing applications.
+# * @license This work is dedicated to the public domain under CC0 1.0.
+# *          Please use it for good and beneficial purposes!
+# ***************************************************************************
+
 name: CI
 
 on:

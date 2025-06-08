@@ -1,12 +1,15 @@
 /**
+ * *************************** In The Name Of God ***************************
  * @file    pwm.h
- * @brief   Digital PWM module interface for carrier-based PWM generation.
- * @author  Hossein Abedini
+ * @brief   Digital PWM module interface for carrier-based PWM generation
+ * @author  Dr.-Ing. Hossein Abedini
  * @date    2025-06-01
- *
- * Provides types and functions for generating phase-shifted PWM signals using selectable carrier
- * waveforms.
- */
+ * Provides types and functions for generating phase-shifted PWM signals using
+ * selectable carrier waveforms.
+ * @note    Designed for real-time signal processing applications.
+ * @license This work is dedicated to the public domain under CC0 1.0.
+ *          Please use it for good and beneficial purposes!
+ ***************************************************************************/
 
 #ifndef PWM_H
 #define PWM_H
@@ -17,7 +20,6 @@ extern "C"
 #endif
 
 /********************************* INCLUDES **********************************/
-#include <math.h>
 #include <stdint.h>
 
     /***************************** TYPE DEFINITIONS ******************************/
@@ -30,8 +32,8 @@ extern "C"
     typedef struct
     {
         float Ts;
-        int carrier_select;
-        float gate_on_voltage; // Output voltage when PWM is ON
+        int   carrier_select;
+        float gate_on_voltage;  // Output voltage when PWM is ON
     } PwmParams;
 
     /**
@@ -78,9 +80,9 @@ extern "C"
      */
     typedef struct
     {
-        PwmParams params;
-        PwmState state;
-        PwmInputs in;
+        PwmParams  params;
+        PwmState   state;
+        PwmInputs  in;
         PwmOutputs out;
     } PwmModule;
 
@@ -90,17 +92,17 @@ extern "C"
      * @param   mod     Pointer to the PWM module instance.
      * @param   params  Pointer to parameters (must not be NULL).
      */
-    void pwm_module_init(PwmModule *mod, const PwmParams *params);
+    void pwm_module_init(PwmModule* mod, const PwmParams* params);
 
     /**
      * @brief   Advances the PWM module by one step, updating all outputs based on the current state
      * and inputs.
      * @param   mod     Pointer to the PWM module instance.
      */
-    void pwm_module_step(PwmModule *mod);
+    void pwm_module_step(PwmModule* mod);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // PWM_H
+#endif  // PWM_H

@@ -38,18 +38,23 @@
 # QSPICE output files
 *.qraw
 *.qopraw
+*.qsch~
+*.net
+
+# Digital Mars Compiler specific
+*.lst
+*.err
+
+# Exclude entire compiler directory (downloaded automatically)
+compiler/
 
 # Build artifacts
 build/
 *.map
-*.obj
-*.dll
-*.lib
 *.exp
 
 # IDE specific
 .vs/
-.vscode/
 *.swp
 *.swo
 

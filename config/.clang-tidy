@@ -1,3 +1,15 @@
+# *************************** In The Name Of God ***************************
+# * @file    .clang-tidy
+# * @brief   ClangTidy configuration for power electronics control library
+# * @author  Dr.-Ing. Hossein Abedini
+# * @date    2025-06-08
+# * Static analysis rules and linting configuration for maintaining high
+# * code quality in the power electronics control library.
+# * @note    Designed for real-time signal processing applications.
+# * @license This work is dedicated to the public domain under CC0 1.0.
+# *          Please use it for good and beneficial purposes!
+# ***************************************************************************
+
 ---
 Checks: >
   clang-diagnostic-*,
@@ -6,7 +18,17 @@ Checks: >
   performance-*,
   portability-*,
   readability-*,
-  -modernize-use-trailing-return-type
+  bugprone-*,
+  cert-*,
+  misc-*,
+  misc-const-correctness,
+  misc-include-cleaner,
+  readability-const-return-type,
+  cppcoreguidelines-const-correctness,
+  -modernize-use-trailing-return-type,
+  -readability-magic-numbers,
+  -cert-err58-cpp,
+  -misc-non-private-member-variables-in-classes
 WarningsAsErrors: ''
 HeaderFilterRegex: '.*'
 AnalyzeTemporaryDtors: false
@@ -16,3 +38,19 @@ CheckOptions:
     value: 2
   - key: readability-identifier-length.MinimumParameterNameLength
     value: 2
+  - key: readability-function-cognitive-complexity.Threshold
+    value: 25
+  - key: readability-function-size.LineThreshold
+    value: 80
+  - key: performance-move-const-arg.CheckTriviallyCopyableMove
+    value: false
+  - key: cppcoreguidelines-const-correctness.AnalyzeValues
+    value: true
+  - key: cppcoreguidelines-const-correctness.AnalyzeReferences
+    value: true
+  - key: cppcoreguidelines-const-correctness.WarnPointersAsValues
+    value: false
+  - key: cppcoreguidelines-const-correctness.TransformValues
+    value: true
+  - key: cppcoreguidelines-const-correctness.TransformReferences
+    value: true

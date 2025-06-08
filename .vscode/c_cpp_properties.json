@@ -1,0 +1,49 @@
+// *************************** In The Name Of God ***************************
+// * @file    c_cpp_properties.json
+// * @brief   VS Code C++ IntelliSense configuration for Digital Mars Compiler
+// * @author  Dr.-Ing. Hossein Abedini
+// * @date    2025-06-08
+// * Configuration for C++ language support, include paths, and compiler
+// * settings for the power electronics control library.
+// * @note    Designed for real-time signal processing applications.
+// * @license This work is dedicated to the public domain under CC0 1.0.
+// *          Please use it for good and beneficial purposes!
+// ***************************************************************************
+
+{
+    "configurations": [
+        {
+            "name": "Digital Mars C++ (DMC)",            "includePath": [
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/modules/power_electronics/filters/iir",
+                "${workspaceFolder}/modules/power_electronics/pwm",
+                "${workspaceFolder}/modules/qspice_modules/ctrl",
+                "${workspaceFolder}/compiler/include/**",
+                "${workspaceFolder}/compiler/stlport/stlport/**"
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE",
+                "WIN32",
+                "_WIN32",
+                "__DMC__",
+                "__STDC__"
+            ],
+            "windowsSdkVersion": "10.0.19041.0",
+            "compilerPath": "${workspaceFolder}/compiler/bin/dmc.exe",
+            "cStandard": "c11",
+            "cppStandard": "c++11",
+            "intelliSenseMode": "windows-gcc-x86",
+            "browse": {                "path": [
+                    "${workspaceFolder}",
+                    "${workspaceFolder}/modules",
+                    "${workspaceFolder}/compiler/include",
+                    "${workspaceFolder}/compiler/stlport/stlport"
+                ],
+                "limitSymbolsToIncludedHeaders": false
+            }
+        }
+    ],
+    "version": 4
+}
