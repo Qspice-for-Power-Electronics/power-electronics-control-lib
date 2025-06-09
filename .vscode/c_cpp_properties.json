@@ -13,22 +13,25 @@
 {
     "configurations": [
         {
-            "name": "Digital Mars C++ (DMC)",            "includePath": [
+            "name": "Digital Mars C++ (DMC)",             
+             "includePath": [
                 "${workspaceFolder}/**",
+                "${workspaceFolder}/modules/power_electronics/common",
                 "${workspaceFolder}/modules/power_electronics/filters/iir",
                 "${workspaceFolder}/modules/power_electronics/pwm",
                 "${workspaceFolder}/modules/qspice_modules/ctrl",
                 "${workspaceFolder}/compiler/include/**",
                 "${workspaceFolder}/compiler/stlport/stlport/**"
-            ],
-            "defines": [
+            ],         
+               "defines": [
                 "_DEBUG",
                 "UNICODE",
                 "_UNICODE",
                 "WIN32",
                 "_WIN32",
                 "__DMC__",
-                "__STDC__"
+                "__STDC__",
+                "DMC_BOOL_COMPAT"
             ],
             "windowsSdkVersion": "10.0.19041.0",
             "compilerPath": "${workspaceFolder}/compiler/bin/dmc.exe",
@@ -38,6 +41,7 @@
             "browse": {                "path": [
                     "${workspaceFolder}",
                     "${workspaceFolder}/modules",
+                    "${workspaceFolder}/modules/power_electronics/common",
                     "${workspaceFolder}/compiler/include",
                     "${workspaceFolder}/compiler/stlport/stlport"
                 ],

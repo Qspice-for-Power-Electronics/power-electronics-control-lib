@@ -52,8 +52,9 @@ void pwm_module_step(PwmModule* mod)
     mod->out.CenterAligned = fabsf(2.0f * (carrier - 0.5f));
     mod->out.SawtoothDown  = 1.0f - carrier;
 
-    // ClkOut: 1 at counter reset (start of period), else 0 (robust for floating point)
-    mod->out.ClkOut = (fmod(carrier_raw, 1.0f) < 1e-4f) ? 1.0f : 0.0f;
+    // ClkOut: true at counter reset (start of period),
+    // else false (robust for floating point)
+    mod->out.ClkOut = (fmod(carrier_raw, 1.0f) < 1e-4f) ? true : false;
     // PWM output: pulse when selected carrier < duty
     mod->out.PWM = (selected_carrier < mod->in.duty) ? mod->params.gate_on_voltage : 0.0f;
 }
@@ -86,5 +87,5 @@ void pwm_module_init(PwmModule* mod, const PwmParams* params)
     mod->out.SawtoothUp    = 0.0f;
     mod->out.CenterAligned = 0.0f;
     mod->out.SawtoothDown  = 0.0f;
-    mod->out.ClkOut        = 0.0f;
+    mod->out.ClkOut        = false;
 }

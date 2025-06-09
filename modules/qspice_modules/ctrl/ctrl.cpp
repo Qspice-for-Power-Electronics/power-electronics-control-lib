@@ -172,7 +172,7 @@ extern "C" __declspec(dllexport) void ctrl(void** opaque, double t, union uData*
     pwm_module_step(&mod);
 
     // Rising edge detection for ClkOut for digital controller
-    static float prev_clk = 0.0f;
+    static bool prev_clk = false;
     if (mod.out.ClkOut && !prev_clk)
     {
         /* digital controller code */
@@ -190,5 +190,5 @@ extern "C" __declspec(dllexport) void ctrl(void** opaque, double t, union uData*
     Out2 = mod.out.CenterAligned;
     Out3 = mod.out.SawtoothUp;
     Out4 = mod.out.SawtoothDown;
-    Out5 = mod.out.ClkOut;
+    Out5 = mod.out.ClkOut ? 1.0f : 0.0f; /* Convert boolean to float for QSPICE */
 }

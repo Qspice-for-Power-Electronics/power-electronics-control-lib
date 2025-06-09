@@ -64,7 +64,7 @@ extern "C"
      * SawtoothUp: rising sawtooth carrier (0..1)
      * CenterAligned: triangle carrier (0..1)
      * SawtoothDown: falling sawtooth carrier (1..0)
-     * ClkOut: 1 at start of each carrier period, 0 otherwise
+     * ClkOut: true at start of each carrier period, false otherwise
      */
     typedef struct
     {
@@ -72,7 +72,7 @@ extern "C"
         float SawtoothUp;
         float CenterAligned;
         float SawtoothDown;
-        float ClkOut;
+        bool  ClkOut;
     } PwmOutputs;
 
     /**
