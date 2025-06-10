@@ -13,7 +13,6 @@
 /********************************* INCLUDES **********************************/
 #include "iir.h"
 #include "math_constants.h"
-#include <assert.h>
 #include <math.h>
 
 /********************************* DEFINES ***********************************/
@@ -48,11 +47,6 @@ void iir_module_init(IirModule* mod, const IirParams* params)
     }
     else
     {
-#ifdef _MSC_VER
-        __debugbreak();  // MSVC: trigger a debug break if params is not provided
-#else
-        assert(params && "iir_module_init: params must not be NULL");
-#endif
         return;
     }
     mod->state.y_prev = 0.0f;

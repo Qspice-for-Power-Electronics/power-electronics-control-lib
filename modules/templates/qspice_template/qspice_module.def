@@ -1,0 +1,8 @@
+LIBRARY "qspice_module.dll"
+DESCRIPTION '[REPLACE: Your module description] as a DLL'
+EXETYPE NT
+SUBSYSTEM WINDOWS
+CODE SHARED EXECUTE
+DATA WRITE
+EXPORTS
+qspice_module
