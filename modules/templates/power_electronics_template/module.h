@@ -42,10 +42,9 @@ extern "C"
      */
     typedef struct
     {
-        float param1; /* [REPLACE: Description of param1 [MODULE_PARAM1_MIN, MODULE_PARAM1_MAX]] */
-        int32_t
-             param2; /* [REPLACE: Description of param2 [MODULE_PARAM2_MIN, MODULE_PARAM2_MAX]] */
-        bool enable_feature; /* [REPLACE: Description of feature flag] */
+        float   param1;         /* [REPLACE: Description of param1 [MIN, MAX]] */
+        int32_t param2;         /* [REPLACE: Description of param2 [MIN, MAX]] */
+        bool    enable_feature; /* [REPLACE: Description of feature flag] */
     } module_params_t;
 
     /**
