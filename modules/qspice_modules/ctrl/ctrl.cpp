@@ -15,6 +15,7 @@
 #include "pwm.h"
 
 /***************************** TYPE DEFINITIONS ******************************/
+
 // Union for generic data exchange (do not remove)
 union uData
 {
@@ -34,6 +35,7 @@ union uData
 };
 
 /**************************** MACRO UNDEFINES *******************************/
+
 // #undef pin names lest they collide with names in any header file(s) you might include.
 #undef V_ac
 #undef I_ac
@@ -156,14 +158,14 @@ extern "C" __declspec(dllexport) void ctrl(void** opaque, double t, union uData*
 
     // Module initalization code
     static PwmModule mod;
-    static IirModule lpf;
+    static iir_t     lpf;
     static int       mod_initialized = 0;
     if (!mod_initialized)
     {
         PwmParams const pwm_params = {10e-6f, 0, 15.0f};  // Ts, carrier_select, gate_on_voltage
         pwm_module_init(&mod, &pwm_params);
-        IirParams const lpf_params = {1e-4f, 100.0f, 0, 0.0f};  // Ts, fc, type=lowpass, a=auto
-        iir_module_init(&lpf, &lpf_params);
+        iir_params_t const lpf_params = {1e-4f, 100.0f, 0, 0.0f};  // Ts, fc, type=lowpass, a=auto
+        iir_init(&lpf, &lpf_params);
         mod_initialized = 1;
     }
 
@@ -176,12 +178,11 @@ extern "C" __declspec(dllexport) void ctrl(void** opaque, double t, union uData*
     if (mod.out.ClkOut && !prev_clk)
     {
         /* digital controller code */
-        // --- Example: Lowpass filter In1 using IirModule ---
-        lpf.in.u = In1;
-        iir_module_step(&lpf);
-        Out6         = lpf.out.y;  // Example: filtered output to Out6
-        mod.in.duty  = 0.5f;       // Test: 50% duty cycle
-        mod.in.phase = 0.0f;       // Test: 0 phase offset
+        // --- Example: Lowpass filter In1 using iir_t ---
+        iir_step(&lpf, In1);
+        Out6         = lpf.outputs.y;  // Example: filtered output to Out6
+        mod.in.duty  = 0.5f;           // Test: 50% duty cycle
+        mod.in.phase = 0.0f;           // Test: 0 phase offset
     }
     prev_clk = mod.out.ClkOut;
 

@@ -17,6 +17,27 @@
 
 /********************************* DEFINES ***********************************/
 
+/**************************** PRIVATE FUNCTIONS ******************************/
+
+/**
+ * @brief   Clear IIR filter state to default values.
+ * @param   p_state   Pointer to state structure to clear.
+ */
+static inline void clear_state(iir_state_t* const p_state)
+{
+    p_state->y_prev = 0.0f;
+    p_state->u_prev = 0.0f;
+}
+
+/**
+ * @brief   Clear IIR filter outputs to default values.
+ * @param   p_outputs Pointer to outputs structure to clear.
+ */
+static inline void clear_outputs(iir_outputs_t* const p_outputs)
+{
+    p_outputs->y = 0.0f;
+}
+
 /**************************** PUBLIC FUNCTIONS *******************************/
 
 /**
@@ -32,50 +53,59 @@ float iir_calc_a(float Ts, float fc)
 }
 
 /**
- * @brief   Initialize the IIR filter module with the given parameters (or defaults if params is
- * null).
- * @param   mod     Pointer to the IIR filter module instance.
- * @param   params  Pointer to parameters, or NULL for defaults.
+ * @brief   Initialize the IIR filter module with given parameters.
+ * @param   p_mod     Pointer to the IIR filter module instance.
+ * @param   p_params  Pointer to initialization parameters.
  */
-void iir_module_init(IirModule* mod, const IirParams* params)
+void iir_init(iir_t* const p_mod, const iir_params_t* const p_params)
 {
-    if (params)
+    p_mod->params.Ts   = p_params->Ts;
+    p_mod->params.fc   = p_params->fc;
+    p_mod->params.type = p_params->type;
+    p_mod->params.a    = p_params->a;
+
+    // Auto-calculate coefficient if not provided or invalid
+    if (p_mod->params.a <= 0.0f && p_mod->params.fc > 0.0f && p_mod->params.Ts > 0.0f)
     {
-        mod->params = *params;
-        if (mod->params.a <= 0.0f && mod->params.fc > 0.0f && mod->params.Ts > 0.0f)
-            mod->params.a = iir_calc_a(mod->params.Ts, mod->params.fc);
+        p_mod->params.a = iir_calc_a(p_mod->params.Ts, p_mod->params.fc);
     }
-    else
-    {
-        return;
-    }
-    mod->state.y_prev = 0.0f;
-    mod->state.u_prev = 0.0f;
-    mod->in.u         = 0.0f;
-    mod->out.y        = 0.0f;
+
+    iir_reset(p_mod);
 }
 
 /**
- * @brief   Advances the IIR filter module by one step, updating the output based on the current
- * state and inputs.
- * @param   mod     Pointer to the IIR filter module instance.
+ * @brief   Reset the IIR filter to initial state while preserving parameters.
+ * @param   p_mod     Pointer to the IIR filter module instance.
  */
-void iir_module_step(IirModule* mod)
+void iir_reset(iir_t* const p_mod)
 {
-    float const a = mod->params.a;
-    float const u = mod->in.u;
+    clear_state(&p_mod->state);
+    clear_outputs(&p_mod->outputs);
+}
+
+/**
+ * @brief   Execute one processing step of the IIR filter.
+ * @param   p_mod          Pointer to the IIR filter module instance.
+ * @param   input_signal   Input signal value to be filtered.
+ */
+void iir_step(iir_t* const p_mod, const float input_signal)
+{
+    float const a = p_mod->params.a;
+    float const u = input_signal;
     float       y = 0.0f;
-    if (mod->params.type == 0)
+
+    if (p_mod->params.type == 0)
     {
         // Lowpass: y(k) = a*u(k) + (1-a)*y(k-1)
-        y = a * u + (1.0f - a) * mod->state.y_prev;
+        y = a * u + (1.0f - a) * p_mod->state.y_prev;
     }
     else
     {
         // Highpass: y(k) = (1-a)*(u(k)-u(k-1)+y(k-1))
-        y = (1.0f - a) * (u - mod->state.u_prev + mod->state.y_prev);
+        y = (1.0f - a) * (u - p_mod->state.u_prev + p_mod->state.y_prev);
     }
-    mod->out.y        = y;
-    mod->state.y_prev = y;
-    mod->state.u_prev = u;
+
+    p_mod->outputs.y    = y;
+    p_mod->state.y_prev = y;
+    p_mod->state.u_prev = u;
 }

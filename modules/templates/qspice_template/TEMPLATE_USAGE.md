@@ -148,7 +148,7 @@ error_signal = error;
 
 ### Multiple Module Integration
 ```cpp
-static IirModule  lpf;      // Low-pass filter
+static iir_t      lpf;      // Low-pass filter
 static PwmModule  pwm;      // PWM generator  
 static PiModule   pi_ctrl;  // PI controller
 
@@ -156,10 +156,9 @@ static PiModule   pi_ctrl;  // PI controller
 pi_ctrl.in.error = reference - feedback;
 pi_step(&pi_ctrl);
 
-lpf.in.u = pi_ctrl.out.control;
-iir_module_step(&lpf);
+iir_step(&lpf, pi_ctrl.out.control);
 
-pwm.in.duty = lpf.out.y;
+pwm.in.duty = lpf.outputs.y;
 pwm_module_step(&pwm);
 ```
 

@@ -23,76 +23,74 @@ extern "C"
 #include <stdint.h>
 
     /***************************** TYPE DEFINITIONS ******************************/
-    /**
-     * @brief Parameters for IIR filter.
-     * Ts: sample time (seconds)
-     * fc: cutoff frequency (Hz)
-     * type: 0 = lowpass, 1 = highpass
-     * a: filter coefficient (0 < a <= 1), computed from Ts and fc if not set directly
-     */
-    typedef struct
-    {
-        float Ts;
-        float fc;
-        int   type;  // 0 = lowpass, 1 = highpass
-        float a;     // filter coefficient
-    } IirParams;
 
     /**
-     * @brief State for IIR filter.
-     * y_prev: previous output
-     * u_prev: previous input
+     * @brief Parameters for IIR filter configuration.
+     * Ts: sample time in seconds [1e-6, 1.0]
+     * fc: cutoff frequency in Hz [0.1, 10000.0]
+     * type: filter type (0 = lowpass, 1 = highpass)
+     * a: filter coefficient (0 < a <= 1), computed from Ts and fc if
+     * not set directly
      */
     typedef struct
     {
-        float y_prev;
-        float u_prev;
-    } IirState;
+        float Ts;   /* Sample time in seconds [1e-6, 1.0] */
+        float fc;   /* Cutoff frequency in Hz [0.1, 10000.0] */
+        int   type; /* Filter type: 0 = lowpass, 1 = highpass */
+        float a;    /* Filter coefficient (0 < a <= 1) */
+    } iir_params_t;
 
     /**
-     * @brief Inputs for IIR filter.
-     * u: current input
+     * @brief Internal state for IIR filter operation.
+     * y_prev: previous output sample
+     * u_prev: previous input sample
      */
     typedef struct
     {
-        float u;
-    } IirInputs;
+        float y_prev; /* Previous output sample */
+        float u_prev; /* Previous input sample */
+    } iir_state_t;
 
     /**
-     * @brief Outputs for IIR filter.
-     * y: current output
+     * @brief Output signals from IIR filter processing.
+     * y: current filtered output signal
      */
     typedef struct
     {
-        float y;
-    } IirOutputs;
+        float y; /* Current filtered output signal */
+    } iir_outputs_t;
 
     /**
-     * @brief IIR filter module encapsulating all parameters, state, inputs, and outputs.
+     * @brief Complete IIR filter module structure encapsulating all components.
      */
     typedef struct
     {
-        IirParams  params;
-        IirState   state;
-        IirInputs  in;
-        IirOutputs out;
-    } IirModule;
+        iir_params_t  params;
+        iir_state_t   state;
+        iir_outputs_t outputs;
+    } iir_t;
 
     /************************* FUNCTION PROTOTYPES *******************************/
-    /**
-     * @brief   Initialize the IIR filter module with the given parameters. Parameters must not be
-     * NULL.
-     * @param   mod     Pointer to the IIR filter module instance.
-     * @param   params  Pointer to parameters (must not be NULL).
-     */
-    void iir_module_init(IirModule* mod, const IirParams* params);
 
     /**
-     * @brief   Advances the IIR filter module by one step, updating the output based on the current
-     * state and inputs.
-     * @param   mod     Pointer to the IIR filter module instance.
+     * @brief   Initialize the IIR filter module with given parameters.
+     * @param   p_mod     Pointer to the IIR filter module instance.
+     * @param   p_params  Pointer to initialization parameters.
      */
-    void iir_module_step(IirModule* mod);
+    void iir_init(iir_t* const p_mod, const iir_params_t* const p_params);
+
+    /**
+     * @brief   Reset the IIR filter to initial state while preserving parameters.
+     * @param   p_mod     Pointer to the IIR filter module instance.
+     */
+    void iir_reset(iir_t* const p_mod);
+
+    /**
+     * @brief   Execute one processing step of the IIR filter.
+     * @param   p_mod          Pointer to the IIR filter module instance.
+     * @param   input_signal   Input signal value to be filtered.
+     */
+    void iir_step(iir_t* const p_mod, const float input_signal);
 
     /**
      * @brief   Calculate the IIR filter coefficient 'a' for a given sample time and cutoff

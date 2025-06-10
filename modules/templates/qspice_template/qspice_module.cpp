@@ -85,7 +85,7 @@ extern "C" __declspec(dllexport) void qspice_module(void** opaque, double t, uni
     // [REPLACE: Declare static instances of your power electronics modules]
     // Module instances (static for persistence across function calls)
     // static YourModule your_module;
-    // static IirModule  filter;
+    // static iir_t      filter;
     // static PwmModule  pwm_gen;
 
     // One-time initialization
@@ -107,23 +107,20 @@ extern "C" __declspec(dllexport) void qspice_module(void** opaque, double t, uni
     }
 
     // [REPLACE: Implement your main processing logic here]
-    // Main processing logic
-
-    // Example: Update module inputs
+    // Main processing logic    // Example: Update module inputs
     // your_module.in.input_value = input1;
-    // filter.in.u = input2;
+    // iir_step(&filter, input2);
     // pwm_gen.in.t = static_cast<float>(t);
     // pwm_gen.in.duty = 0.5f;
     // pwm_gen.in.phase = 0.0f;
 
     // Example: Execute processing steps
     // your_module_step(&your_module);
-    // iir_module_step(&filter);
     // pwm_module_step(&pwm_gen);
 
     // Example: Map outputs
     // output1 = your_module.out.result;
-    // output2 = filter.out.y;
+    // output2 = filter.outputs.y;
     // output3 = pwm_gen.out.PWM;
 
     // [REPLACE: Add any additional control logic here]
