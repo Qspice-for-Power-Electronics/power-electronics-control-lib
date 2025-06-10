@@ -23,12 +23,13 @@ REM WHAT THIS SCRIPT DOES:
 REM 1. Validates required tools (clang-format, clang-tidy)
 REM 2. Ensures project is built (needed for static analysis)
 REM 3. Applies const correctness fixes (adds const where appropriate)
-REM 4. Formats all source code using clang-format
-REM 5. Removes unnecessary #include statements
-REM 6. Fixes modernization issues (C++11 improvements)
-REM 7. Corrects performance issues (move semantics, etc.)
-REM 8. Addresses readability and maintainability concerns
-REM 9. Reports remaining warnings that require manual attention
+REM 4. Adds parentheses around #define values for safer macro definitions
+REM 5. Formats all source code using clang-format
+REM 6. Removes unnecessary #include statements
+REM 7. Fixes modernization issues (C++11 improvements)
+REM 8. Corrects performance issues (move semantics, etc.)
+REM 9. Addresses readability and maintainability concerns
+REM 10. Reports remaining warnings that require manual attention
 REM
 REM REQUIREMENTS:
 REM - LLVM/Clang tools (clang-format, clang-tidy) in PATH
@@ -40,7 +41,6 @@ REM
 REM OUTPUT:
 REM - Modified source files with automatic fixes applied
 REM - Detailed report of changes made and remaining issues
-REM - Backup files (.bak) for all modified files
 REM
 REM USAGE:
 REM   .\scripts\cleanup_code.bat
@@ -148,20 +148,7 @@ if not exist build\*.obj (
 )
 
 REM ================================================================================
-REM STEP 4: Create Backup Directory
-REM ================================================================================
-
-REM Create backup directory for original files (unless dry-run)
-if "!DRY_RUN!"=="false" (
-    if not exist backup (
-        mkdir backup
-    )
-    REM Clean old backups (keep only current session)
-    del /f /q backup\*.bak 2>nul
-)
-
-REM ================================================================================
-REM STEP 5: Phase 1 - Const Correctness and Core Fixes
+REM STEP 4: Phase 1 - Const Correctness and Core Fixes
 REM ================================================================================
 
 echo ================================================================================
@@ -188,11 +175,7 @@ for /r "modules" %%f in (*.cpp *.h) do (
     set /a FILES_PROCESSED+=1
     echo [!FILES_PROCESSED!/!SOURCE_FILE_COUNT!] Processing %%~nxf for const correctness...
     
-    if "!DRY_RUN!"=="false" (
-        REM Create backup of original file
-        copy /Y "%%f" "backup\%%~nxf.bak" >nul 2>&1
-    )
-      REM Apply core fixes with proper include paths
+    REM Apply core fixes with proper include paths
     clang-tidy !TIDY_FLAGS! --checks="!CORE_CHECKS!" "%%f" -- -std=c++11 !CLANG_INCLUDE_PATHS!
     if errorlevel 1 (
         echo Warning: Issues found in %%f during core cleanup
@@ -204,7 +187,7 @@ echo Phase 1 completed - Core improvements applied
 echo.
 
 REM ================================================================================
-REM STEP 5.5: Phase 1.5 - Macro Parentheses Safety
+REM STEP 5: Phase 1.5 - Macro Parentheses Safety
 REM ================================================================================
 
 echo ================================================================================
@@ -326,7 +309,6 @@ if "!DRY_RUN!"=="true" (
     echo To apply changes, run: .\scripts\cleanup_code.bat
 ) else (
     echo Files processed: !FILES_PROCESSED!
-    echo Backup files created in: backup\
 )
 
 echo.
@@ -347,8 +329,6 @@ if "!DRY_RUN!"=="false" (
     echo 1. Review changed files: git diff
     echo 2. Test build: .\build_all.bat
     echo 3. Commit changes: git add . ^&^& git commit -m "Apply automatic code cleanup"
-    echo.
-    echo NOTE: If issues occur, restore from backup: copy backup\*.bak modules\
 )
 
 REM Exit with error count (0 = success, >0 = issues found)

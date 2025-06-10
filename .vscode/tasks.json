@@ -80,14 +80,14 @@
                 "panel": "shared"
             },
             "detail": "Clean all build artifacts and output files"        },
-        {
-            // TASK 3: Code Cleanup
+        {            // TASK 3: Code Cleanup
             // Purpose: Runs comprehensive code quality improvements
             // Features:
             //   - Clang-tidy analysis for const correctness
             //   - Code formatting and style consistency  
             //   - Include header cleanup and optimization
             //   - Automated code quality suggestions
+            //   - Adds parentheses around #define values for safer macro definitions
             // Usage: Run periodically to maintain code quality
             // Requirements: Clang-tidy must be installed and in PATH
             // Note: Runs in dry-run mode by default (preview changes only)
@@ -126,35 +126,6 @@
             "problemMatcher": [
                 "$gcc"
             ],
-            "detail": "Build all power electronics and QSPICE modules using Digital Mars Compiler"
-        },
-        {           
-             // TASK 5: Add Macro Parentheses
-            // Purpose: Automatically adds parentheses around #define values for safer macro definitions
-            // Features:
-            //   - Scans all source files for #define statements
-            //   - Adds parentheses around values that don't already have them
-            //   - Preserves existing parentheses and string literals
-            //   - Shows dry-run preview before applying changes
-            // Usage: Run when you want to improve macro safety
-            // Best Practice: This prevents operator precedence issues in macro expansions
-            // Example: #define VALUE 1+2 → #define VALUE (1+2)
-            "label": "Add Macro Parentheses",
-            "type": "shell",
-            "command": "powershell.exe",
-            "args": [
-                "-ExecutionPolicy", "Bypass",
-                "-File", "${workspaceFolder}/scripts/add_macro_parentheses.ps1"
-            ],
-            "group": "build",
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": true,
-                "panel": "shared",
-                "clear": true
-            },
-            "detail": "Add parentheses around #define values for safer macro definitions"
-        }
+            "detail": "Build all power electronics and QSPICE modules using Digital Mars Compiler"        }
     ]
 }
