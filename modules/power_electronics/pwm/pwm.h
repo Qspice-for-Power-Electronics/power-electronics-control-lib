@@ -23,43 +23,44 @@ extern "C"
 #include <stdint.h>
 
     /***************************** TYPE DEFINITIONS ******************************/
+
     /**
-     * @brief Parameters for PWM generation.
-     * Ts: carrier period (seconds)
-     * carrier_select: 0 = CenterAligned, 1 = SawtoothUp, 2 = SawtoothDown
-     * gate_on_voltage: output voltage when PWM is ON (e.g., gate drive voltage)
+     * @brief Enumeration for PWM carrier waveform selection.
+     * Defines the type of carrier waveform used for PWM generation.
+     */
+    typedef enum
+    {
+        PWM_CARRIER_CENTER_ALIGNED = 0, /* Triangle carrier (0..1) for center-aligned PWM */
+        PWM_CARRIER_SAWTOOTH_UP    = 1, /* Rising sawtooth carrier (0..1) for edge-aligned PWM */
+        PWM_CARRIER_SAWTOOTH_DOWN  = 2  /* Falling sawtooth carrier (1..0) for edge-aligned PWM */
+    } pwm_carrier_t;
+
+    /**
+     * @brief Parameters for PWM module configuration.
+     * Ts: carrier period in seconds [1e-6, 1e-3]
+     * carrier_select: carrier waveform type selection
+     * gate_on_voltage: output voltage when PWM is ON [0.0, 24.0]
+     * gate_off_voltage: output voltage when PWM is OFF [0.0, 24.0]
      */
     typedef struct
     {
-        float Ts;
-        int   carrier_select;
-        float gate_on_voltage;  // Output voltage when PWM is ON
-    } PwmParams;
+        float         Ts;               /* Carrier period in seconds [1e-6, 1e-3] */
+        pwm_carrier_t carrier_select;   /* Carrier waveform selection */
+        float         gate_on_voltage;  /* Output voltage when PWM is ON [0.0, 24.0] */
+        float         gate_off_voltage; /* Output voltage when PWM is OFF [0.0, 24.0] */
+    } pwm_params_t;
 
     /**
-     * @brief State for PWM module.
-     * (No fields needed for stateless operation)
+     * @brief Internal state for PWM module operation.
+     * No internal state is required for this stateless PWM implementation.
      */
-    typedef struct
-    {
-        // Empty for now
-    } PwmState;
+    // typedef struct
+    // {
+    //     int unused; /* No state needed for stateless PWM implementation */
+    // } pwm_state_t;
 
     /**
-     * @brief Inputs for PWM generation.
-     * t: current time (seconds)
-     * duty: duty cycle (0..1)
-     * phase: phase offset in radians (−2π..2π), applied to carrier and all outputs
-     */
-    typedef struct
-    {
-        float t;
-        float duty;
-        float phase;
-    } PwmInputs;
-
-    /**
-     * @brief Outputs for PWM generation.
+     * @brief Output signals from PWM module processing.
      * PWM: output pulse (0 or gate_on_voltage)
      * SawtoothUp: rising sawtooth carrier (0..1)
      * CenterAligned: triangle carrier (0..1)
@@ -68,38 +69,46 @@ extern "C"
      */
     typedef struct
     {
-        float PWM;
-        float SawtoothUp;
-        float CenterAligned;
-        float SawtoothDown;
-        bool  ClkOut;
-    } PwmOutputs;
+        float PWM;           /* PWM output signal [0, gate_on_voltage] */
+        float SawtoothUp;    /* Rising sawtooth carrier [0.0, 1.0] */
+        float CenterAligned; /* Triangle carrier [0.0, 1.0] */
+        float SawtoothDown;  /* Falling sawtooth carrier [0.0, 1.0] */
+        bool  ClkOut;        /* Clock output at start of carrier period */
+    } pwm_outputs_t;
 
     /**
-     * @brief PWM module encapsulating all parameters, state, inputs, and outputs.
+     * @brief Complete PWM module structure encapsulating all components.
      */
     typedef struct
     {
-        PwmParams  params;
-        PwmState   state;
-        PwmInputs  in;
-        PwmOutputs out;
-    } PwmModule;
+        pwm_params_t params;
+        // pwm_state_t   state; /* No state needed for stateless PWM implementation */
+        pwm_outputs_t outputs;
+    } pwm_t;
 
     /************************* FUNCTION PROTOTYPES *******************************/
-    /**
-     * @brief   Initializes the PWM module with the given parameters. Parameters must not be NULL.
-     * @param   mod     Pointer to the PWM module instance.
-     * @param   params  Pointer to parameters (must not be NULL).
-     */
-    void pwm_module_init(PwmModule* mod, const PwmParams* params);
 
     /**
-     * @brief   Advances the PWM module by one step, updating all outputs based on the current state
-     * and inputs.
-     * @param   mod     Pointer to the PWM module instance.
+     * @brief   Initialize the PWM module with given parameters.
+     * @param   p_pwm     Pointer to the PWM module instance.
+     * @param   p_params  Pointer to initialization parameters.
      */
-    void pwm_module_step(PwmModule* mod);
+    void pwm_init(pwm_t* const p_pwm, const pwm_params_t* const p_params);
+
+    /**
+     * @brief   Reset the PWM module to initial state while preserving parameters.
+     * @param   p_pwm     Pointer to the PWM module instance.
+     */
+    void pwm_reset(pwm_t* const p_pwm);
+
+    /**
+     * @brief   Execute one processing step of the PWM module.
+     * @param   p_pwm        Pointer to the PWM module instance.
+     * @param   t            Current time in seconds.
+     * @param   duty         Duty cycle [0.0, 1.0].
+     * @param   phase        Phase offset in radians [-2π, 2π].
+     */
+    void pwm_step(pwm_t* const p_pwm, const float t, const float duty, const float phase);
 
 #ifdef __cplusplus
 }

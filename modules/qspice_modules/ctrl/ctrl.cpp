@@ -157,39 +157,36 @@ extern "C" __declspec(dllexport) void ctrl(void** opaque, double t, union uData*
     float const& Out28    = data[52].f;  // output
 
     // Module initalization code
-    static PwmModule mod;
-    static iir_t     lpf;
-    static int       mod_initialized = 0;
+    static pwm_t pwm_mod;
+    static iir_t lpf;
+    static int   mod_initialized = 0;
     if (!mod_initialized)
     {
-        PwmParams const pwm_params = {10e-6f, 0, 15.0f};  // Ts, carrier_select, gate_on_voltage
-        pwm_module_init(&mod, &pwm_params);
+        pwm_params_t const pwm_params = {10e-6f, PWM_CARRIER_CENTER_ALIGNED, 15.0f, 0.0f};  // Ts, carrier_select, gate_on_voltage, gate_off_voltage
+        pwm_init(&pwm_mod, &pwm_params);
         iir_params_t const lpf_params = {1e-4f, 100.0f, IIR_LOWPASS, 0.0f};  // Ts, fc, type=lowpass, a=auto
         iir_init(&lpf, &lpf_params);
         mod_initialized = 1;
     }
 
-    // Update PWM module inputs
-    mod.in.t = static_cast<float>(t);
-    pwm_module_step(&mod);
+    // Update PWM module
+    pwm_step(&pwm_mod, static_cast<float>(t), 0.5f, 0.0f);  // Example: 50% duty cycle, 0 phase offset
 
     // Rising edge detection for ClkOut for digital controller
     static bool prev_clk = false;
-    if (mod.out.ClkOut && !prev_clk)
+    if (pwm_mod.outputs.ClkOut && !prev_clk)
     {
         /* digital controller code */
         // --- Example: Lowpass filter In1 using iir_t ---
         iir_step(&lpf, In1);
-        Out6         = lpf.outputs.y;  // Example: filtered output to Out6
-        mod.in.duty  = 0.5f;           // Test: 50% duty cycle
-        mod.in.phase = 0.0f;           // Test: 0 phase offset
+        Out6 = lpf.outputs.y;  // Example: filtered output to Out6
     }
-    prev_clk = mod.out.ClkOut;
+    prev_clk = pwm_mod.outputs.ClkOut;
 
     // Assign outputs to data union
-    Out1 = mod.out.PWM;
-    Out2 = mod.out.CenterAligned;
-    Out3 = mod.out.SawtoothUp;
-    Out4 = mod.out.SawtoothDown;
-    Out5 = mod.out.ClkOut ? 1.0f : 0.0f; /* Convert boolean to float for QSPICE */
+    Out1 = pwm_mod.outputs.PWM;
+    Out2 = pwm_mod.outputs.CenterAligned;
+    Out3 = pwm_mod.outputs.SawtoothUp;
+    Out4 = pwm_mod.outputs.SawtoothDown;
+    Out5 = pwm_mod.outputs.ClkOut ? 1.0f : 0.0f; /* Convert boolean to float for QSPICE */
 }

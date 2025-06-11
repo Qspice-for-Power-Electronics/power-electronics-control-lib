@@ -16,71 +16,100 @@
 #include <assert.h>
 #include <math.h>
 
+/********************************* DEFINES ***********************************/
+
+/* PWM module default constants */
+#define PWM_PHASE_TOLERANCE (1e-4F) /* Tolerance for floating point comparisons */
+
+/**************************** PRIVATE FUNCTIONS ******************************/
+
+/**
+ * @brief   Clear PWM state to default values.
+ * @param   p_state   Pointer to state structure to clear.
+ */
+// static inline void clear_state(pwm_state_t* const p_state)
+// {
+//     p_state->unused = 0; /* No state needed for stateless PWM implementation */
+// }
+
+/**
+ * @brief   Clear PWM outputs to default values.
+ * @param   p_outputs Pointer to outputs structure to clear.
+ */
+static inline void clear_outputs(pwm_outputs_t* const p_outputs)
+{
+    p_outputs->PWM           = 0.0F;
+    p_outputs->SawtoothUp    = 0.0F;
+    p_outputs->CenterAligned = 0.0F;
+    p_outputs->SawtoothDown  = 0.0F;
+    p_outputs->ClkOut        = false;
+}
+
 /**************************** PUBLIC FUNCTIONS *******************************/
 
 /**
- * @brief   Advances the PWM module by one step, updating all outputs based on the current state and
- * inputs.
- * @param   mod     Pointer to the PWM module instance.
+ * @brief   Initialize the PWM module with given parameters.
+ * @param   p_pwm     Pointer to the PWM module instance.
+ * @param   p_params  Pointer to initialization parameters.
  */
-void pwm_module_step(PwmModule* mod)
+void pwm_init(pwm_t* const p_pwm, const pwm_params_t* const p_params)
 {
-    // Phase offset is applied to the carrier itself, so all outputs are phase-shifted
-    float const phase_frac  = mod->in.phase / (2.0f * M_PI);  // -1..1 for -2pi..2pi
-    float       carrier_raw = (mod->in.t / mod->params.Ts) + phase_frac;
-    float       carrier     = carrier_raw - floorf(carrier_raw);
+    p_pwm->params.Ts               = p_params->Ts;
+    p_pwm->params.carrier_select   = p_params->carrier_select;
+    p_pwm->params.gate_on_voltage  = p_params->gate_on_voltage;
+    p_pwm->params.gate_off_voltage = p_params->gate_off_voltage;
 
-    // Carrier selection for PWM (now from params)
-    float selected_carrier = 0.0f;
-    switch (mod->params.carrier_select)
-    {
-    case 0:
-        selected_carrier = fabsf(2.0f * (carrier - 0.5f));
-        break;  // CenterAligned
-    case 1:
-        selected_carrier = carrier;
-        break;  // SawtoothUp
-    case 2:
-        selected_carrier = 1.0f - carrier;
-        break;  // SawtoothDown
-    default:
-        selected_carrier = fabsf(2.0f * (carrier - 0.5f));
-        break;
-    }
-
-    mod->out.SawtoothUp    = carrier;
-    mod->out.CenterAligned = fabsf(2.0f * (carrier - 0.5f));
-    mod->out.SawtoothDown  = 1.0f - carrier;
-
-    // ClkOut: true at counter reset (start of period),
-    // else false (robust for floating point)
-    mod->out.ClkOut = (fmod(carrier_raw, 1.0f) < 1e-4f) ? true : false;
-    // PWM output: pulse when selected carrier < duty
-    mod->out.PWM = (selected_carrier < mod->in.duty) ? mod->params.gate_on_voltage : 0.0f;
+    pwm_reset(p_pwm);
 }
 
 /**
- * @brief   Initializes the PWM module with the given parameters. Parameters must not be NULL.
- * @param   mod     Pointer to the PWM module instance.
- * @param   params  Pointer to parameters (must not be NULL).
+ * @brief   Reset the PWM module to initial state while preserving parameters.
+ * @param   p_pwm     Pointer to the PWM module instance.
  */
-void pwm_module_init(PwmModule* mod, const PwmParams* params)
+void pwm_reset(pwm_t* const p_pwm)
 {
-    if (params)
+    // clear_state(&p_pwm->state); /* No state needed for stateless PWM implementation */
+    clear_outputs(&p_pwm->outputs);
+}
+
+/**
+ * @brief   Execute one processing step of the PWM module.
+ * @param   p_pwm        Pointer to the PWM module instance.
+ * @param   t            Current time in seconds.
+ * @param   duty         Duty cycle [0.0, 1.0].
+ * @param   phase        Phase offset in radians [-2π, 2π].
+ */
+void pwm_step(pwm_t* const p_pwm, const float t, const float duty, const float phase)
+{
+    /* Phase offset is applied to the carrier itself, so all outputs are phase-shifted */
+    float const phase_frac  = phase / (2.0F * M_PI); /* -1..1 for -2pi..2pi */
+    float       carrier_raw = (t / p_pwm->params.Ts) + phase_frac;
+    float       carrier     = carrier_raw - floorf(carrier_raw);
+
+    /* Generate all carrier waveforms */
+    p_pwm->outputs.SawtoothUp    = carrier;
+    p_pwm->outputs.CenterAligned = fabsf(2.0F * (carrier - 0.5F));
+    p_pwm->outputs.SawtoothDown  = 1.0F - carrier;
+
+    /* Select carrier based on configuration */
+    float selected_carrier = 0.0F;
+    switch (p_pwm->params.carrier_select)
     {
-        mod->params = *params;
+    case PWM_CARRIER_CENTER_ALIGNED:
+        selected_carrier = p_pwm->outputs.CenterAligned;
+        break;
+    case PWM_CARRIER_SAWTOOTH_UP:
+        selected_carrier = p_pwm->outputs.SawtoothUp;
+        break;
+    case PWM_CARRIER_SAWTOOTH_DOWN:
+        selected_carrier = p_pwm->outputs.SawtoothDown;
+        break;
+    default:
+        selected_carrier = p_pwm->outputs.CenterAligned; /* Default to center-aligned */
+        break;
     }
-    else
-    {
-        return;
-    }
-    // PwmState is empty
-    mod->in.t              = 0.0f;
-    mod->in.duty           = 0.0f;
-    mod->in.phase          = 0.0f;
-    mod->out.PWM           = 0.0f;
-    mod->out.SawtoothUp    = 0.0f;
-    mod->out.CenterAligned = 0.0f;
-    mod->out.SawtoothDown  = 0.0f;
-    mod->out.ClkOut        = false;
+
+    /* ClkOut: true at counter reset (start of period), else false */
+    p_pwm->outputs.ClkOut = (fmodf(carrier_raw, 1.0F) < PWM_PHASE_TOLERANCE) ? true : false; /* PWM output: pulse when selected carrier < duty */
+    p_pwm->outputs.PWM    = (selected_carrier < duty) ? p_pwm->params.gate_on_voltage : p_pwm->params.gate_off_voltage;
 }
