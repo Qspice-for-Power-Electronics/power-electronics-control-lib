@@ -35,6 +35,22 @@ extern "C"
     /***************************** TYPE DEFINITIONS ******************************/
 
     /**
+     * @brief Enumeration for module operation mode/type.
+     * [REPLACE: Describe each enum value and when to use it]
+     *
+     * INSTRUCTIONS:
+     * - Modify this enum to include your module's specific modes/types
+     * - Use descriptive names with MODULE_ prefix for clarity
+     * - Remove this enum entirely if your module doesn't need it
+     * - Example: For a filter, use FILTER_LOWPASS, FILTER_HIGHPASS
+     */
+    typedef enum
+    {
+        MODULE_MODE1 = 0, /* [REPLACE: Description of first mode/type] */
+        MODULE_MODE2 = 1  /* [REPLACE: Description of second mode/type] */
+    } module_mode_t;
+
+    /**
      * @brief Parameters for module configuration.
      * [REPLACE: Describe each parameter and its valid range/values]
      *

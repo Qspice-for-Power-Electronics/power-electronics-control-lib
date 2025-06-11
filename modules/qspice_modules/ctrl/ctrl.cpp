@@ -164,7 +164,7 @@ extern "C" __declspec(dllexport) void ctrl(void** opaque, double t, union uData*
     {
         PwmParams const pwm_params = {10e-6f, 0, 15.0f};  // Ts, carrier_select, gate_on_voltage
         pwm_module_init(&mod, &pwm_params);
-        iir_params_t const lpf_params = {1e-4f, 100.0f, 0, 0.0f};  // Ts, fc, type=lowpass, a=auto
+        iir_params_t const lpf_params = {1e-4f, 100.0f, IIR_LOWPASS, 0.0f};  // Ts, fc, type=lowpass, a=auto
         iir_init(&lpf, &lpf_params);
         mod_initialized = 1;
     }

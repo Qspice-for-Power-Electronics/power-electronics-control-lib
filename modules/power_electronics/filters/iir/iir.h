@@ -25,19 +25,28 @@ extern "C"
     /***************************** TYPE DEFINITIONS ******************************/
 
     /**
+     * @brief IIR filter type enumeration.
+     */
+    typedef enum
+    {
+        IIR_LOWPASS  = 0, /* Lowpass filter */
+        IIR_HIGHPASS = 1  /* Highpass filter */
+    } iir_filter_type_t;
+
+    /**
      * @brief Parameters for IIR filter configuration.
      * Ts: sample time in seconds [1e-6, 1.0]
      * fc: cutoff frequency in Hz [0.1, 10000.0]
-     * type: filter type (0 = lowpass, 1 = highpass)
+     * type: filter type (IIR_LOWPASS or IIR_HIGHPASS)
      * a: filter coefficient (0 < a <= 1), computed from Ts and fc if
      * not set directly
      */
     typedef struct
     {
-        float Ts;   /* Sample time in seconds [1e-6, 1.0] */
-        float fc;   /* Cutoff frequency in Hz [0.1, 10000.0] */
-        int   type; /* Filter type: 0 = lowpass, 1 = highpass */
-        float a;    /* Filter coefficient (0 < a <= 1) */
+        float             Ts;   /* Sample time in seconds [1e-6, 1.0] */
+        float             fc;   /* Cutoff frequency in Hz [0.1, 10000.0] */
+        iir_filter_type_t type; /* Filter type: IIR_LOWPASS or IIR_HIGHPASS */
+        float             a;    /* Filter coefficient (0 < a <= 1) */
     } iir_params_t;
 
     /**

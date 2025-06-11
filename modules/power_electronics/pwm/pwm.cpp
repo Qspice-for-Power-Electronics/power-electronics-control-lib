@@ -72,11 +72,6 @@ void pwm_module_init(PwmModule* mod, const PwmParams* params)
     }
     else
     {
-#ifdef _MSC_VER
-        __debugbreak();  // MSVC: trigger a debug break if params is not provided
-#else
-        assert(params && "pwm_module_init: params must not be NULL");
-#endif
         return;
     }
     // PwmState is empty

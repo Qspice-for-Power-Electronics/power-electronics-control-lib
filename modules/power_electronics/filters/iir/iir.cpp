@@ -93,8 +93,7 @@ void iir_step(iir_t* const p_mod, const float input_signal)
     float const a = p_mod->params.a;
     float const u = input_signal;
     float       y = 0.0f;
-
-    if (p_mod->params.type == 0)
+    if (p_mod->params.type == IIR_LOWPASS)
     {
         // Lowpass: y(k) = a*u(k) + (1-a)*y(k-1)
         y = a * u + (1.0f - a) * p_mod->state.y_prev;
