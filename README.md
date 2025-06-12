@@ -434,8 +434,9 @@ python scripts\project_config.py --qspice-modules
 - **IIR Filter** (`modules/power_electronics/filters/iir/`)
   - Digital IIR filtering implementation
   
-- **PWM Module** (`modules/power_electronics/pwm/`)
-  - PWM generation with phase shift capabilities
+- **PWM Modules** (`modules/power_electronics/pwm/`)
+  - **BPWM Module** (`modules/power_electronics/pwm/bpwm/`) - Basic PWM generation with phase shift capabilities
+  - **EPWM Module** (`modules/power_electronics/pwm/epwm/`) - Enhanced PWM module (ready for implementation)
 
 ### QSPICE Modules
 - **Control Module** (`modules/qspice_modules/ctrl/`)

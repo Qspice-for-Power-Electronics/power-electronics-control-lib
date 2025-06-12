@@ -13,12 +13,12 @@
 {
     "configurations": [
         {
-            "name": "Digital Mars C++ (DMC)",             
-             "includePath": [
+            "name": "Digital Mars C++ (DMC)",  
+                          "includePath": [
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/modules/power_electronics/common",
                 "${workspaceFolder}/modules/power_electronics/filters/iir",
-                "${workspaceFolder}/modules/power_electronics/pwm",
+                "${workspaceFolder}/modules/power_electronics/pwm/bpwm",
                 "${workspaceFolder}/modules/qspice_modules/ctrl",
                 "${workspaceFolder}/compiler/include/**",
                 "${workspaceFolder}/compiler/stlport/stlport/**"

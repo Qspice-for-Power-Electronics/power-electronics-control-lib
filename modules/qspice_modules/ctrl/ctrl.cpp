@@ -11,8 +11,8 @@
  ***************************************************************************/
 
 /********************************* INCLUDES **********************************/
+#include "bpwm.h"
 #include "iir.h"
-#include "pwm.h"
 
 /***************************** TYPE DEFINITIONS ******************************/
 
@@ -157,36 +157,37 @@ extern "C" __declspec(dllexport) void ctrl(void** opaque, double t, union uData*
     float const& Out28    = data[52].f;  // output
 
     // Module initalization code
-    static pwm_t pwm_mod;
-    static iir_t lpf;
-    static int   mod_initialized = 0;
+    static bpwm_t bpwm_mod;
+    static iir_t  lpf;
+    static int    mod_initialized = 0;
     if (!mod_initialized)
     {
-        pwm_params_t const pwm_params = {10e-6f, PWM_CARRIER_CENTER_ALIGNED, 15.0f, 0.0f};  // Ts, carrier_select, gate_on_voltage, gate_off_voltage
-        pwm_init(&pwm_mod, &pwm_params);
+        bpwm_params_t const bpwm_params = {10e-6f, BPWM_CARRIER_CENTER_ALIGNED, 15.0f,
+                                           0.0f};  // Ts, carrier_select, gate_on_voltage, gate_off_voltage
+        bpwm_init(&bpwm_mod, &bpwm_params);
         iir_params_t const lpf_params = {1e-4f, 100.0f, IIR_LOWPASS, 0.0f};  // Ts, fc, type=lowpass, a=auto
         iir_init(&lpf, &lpf_params);
         mod_initialized = 1;
     }
 
-    // Update PWM module
-    pwm_step(&pwm_mod, static_cast<float>(t), 0.5f, 0.0f);  // Example: 50% duty cycle, 0 phase offset
+    // Update BPWM module
+    bpwm_step(&bpwm_mod, static_cast<float>(t), 0.5f, 0.0f);  // Example: 50% duty cycle, 0 phase offset
 
     // Rising edge detection for ClkOut for digital controller
     static bool prev_clk = false;
-    if (pwm_mod.outputs.ClkOut && !prev_clk)
+    if (bpwm_mod.outputs.ClkOut && !prev_clk)
     {
         /* digital controller code */
         // --- Example: Lowpass filter In1 using iir_t ---
         iir_step(&lpf, In1);
         Out6 = lpf.outputs.y;  // Example: filtered output to Out6
     }
-    prev_clk = pwm_mod.outputs.ClkOut;
+    prev_clk = bpwm_mod.outputs.ClkOut;
 
     // Assign outputs to data union
-    Out1 = pwm_mod.outputs.PWM;
-    Out2 = pwm_mod.outputs.CenterAligned;
-    Out3 = pwm_mod.outputs.SawtoothUp;
-    Out4 = pwm_mod.outputs.SawtoothDown;
-    Out5 = pwm_mod.outputs.ClkOut ? 1.0f : 0.0f; /* Convert boolean to float for QSPICE */
+    Out1 = bpwm_mod.outputs.PWM;
+    Out2 = bpwm_mod.outputs.CenterAligned;
+    Out3 = bpwm_mod.outputs.SawtoothUp;
+    Out4 = bpwm_mod.outputs.SawtoothDown;
+    Out5 = bpwm_mod.outputs.ClkOut ? 1.0f : 0.0f; /* Convert boolean to float for QSPICE */
 }

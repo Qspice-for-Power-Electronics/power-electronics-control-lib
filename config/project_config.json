@@ -32,15 +32,15 @@
           "headers": [
             "iir.h"
           ],
-          "dependencies": []
-        },
-        "pwm": {
-          "path": "modules/power_electronics/pwm",
+          "dependencies": []   
+             },
+        "bpwm": {
+          "path": "modules/power_electronics/pwm/bpwm",
           "sources": [
-            "pwm.cpp"
+            "bpwm.cpp"
           ],
           "headers": [
-            "pwm.h"
+            "bpwm.h"
           ],
           "dependencies": []
         }
@@ -55,10 +55,9 @@
             "ctrl.cpp"
           ],
           "headers": [],
-          "definition_file": "ctrl.def",
-          "dependencies": [
+          "definition_file": "ctrl.def",          "dependencies": [
             "iir",
-            "pwm"
+            "bpwm"
           ],
           "output_dll": "ctrl.dll"
         }
@@ -75,7 +74,7 @@
     ],    "include_paths": [
       "modules/power_electronics/common",
       "modules/power_electronics/filters/iir",
-      "modules/power_electronics/pwm",
+      "modules/power_electronics/pwm/bpwm",
       "modules/qspice_modules/ctrl"
     ],
     "system_libraries": [
