@@ -92,6 +92,34 @@ extern "C"
 #define EPSILON_FLOAT  (1e-6f) /**< Small float value for comparisons */
 #define EPSILON_DOUBLE (1e-12) /**< Small double value for comparisons */
 
+/********************************* MATH FUNCTIONS *********************************/
+
+/**
+ * @brief   Return the maximum of two float values
+ * @param   x   First value
+ * @param   y   Second value
+ * @return  Maximum of x and y
+ */
+#ifndef fmaxf
+    static inline float fmaxf(float x, float y)
+    {
+        return (x > y) ? x : y;
+    }
+#endif
+
+/**
+ * @brief   Return the minimum of two float values
+ * @param   x   First value
+ * @param   y   Second value
+ * @return  Minimum of x and y
+ */
+#ifndef fminf
+    static inline float fminf(float x, float y)
+    {
+        return (x < y) ? x : y;
+    }
+#endif
+
 #ifdef __cplusplus
 }
 #endif

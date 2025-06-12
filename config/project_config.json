@@ -38,9 +38,20 @@
           "path": "modules/power_electronics/pwm/bpwm",
           "sources": [
             "bpwm.cpp"
-          ],
+       
+             ],
           "headers": [
             "bpwm.h"
+          ],
+          "dependencies": []
+        },
+        "epwm": {
+          "path": "modules/power_electronics/pwm/epwm",
+          "sources": [
+            "epwm.cpp"
+          ],
+          "headers": [
+            "epwm.h"
           ],
           "dependencies": []
         }
@@ -75,6 +86,7 @@
       "modules/power_electronics/common",
       "modules/power_electronics/filters/iir",
       "modules/power_electronics/pwm/bpwm",
+      "modules/power_electronics/pwm/epwm",
       "modules/qspice_modules/ctrl"
     ],
     "system_libraries": [

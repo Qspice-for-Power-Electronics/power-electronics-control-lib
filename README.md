@@ -436,7 +436,7 @@ python scripts\project_config.py --qspice-modules
   
 - **PWM Modules** (`modules/power_electronics/pwm/`)
   - **BPWM Module** (`modules/power_electronics/pwm/bpwm/`) - Basic PWM generation with phase shift capabilities
-  - **EPWM Module** (`modules/power_electronics/pwm/epwm/`) - Enhanced PWM module (ready for implementation)
+  - **EPWM Module** (`modules/power_electronics/pwm/epwm/`) - Enhanced PWM with center-aligned counter support, dead time, and advanced action modes
 
 ### QSPICE Modules
 - **Control Module** (`modules/qspice_modules/ctrl/`)
