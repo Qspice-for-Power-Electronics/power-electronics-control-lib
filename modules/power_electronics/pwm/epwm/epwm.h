@@ -63,6 +63,7 @@ extern "C"
     typedef struct
     {
         float              Ts;                /* Carrier period in seconds [1e-6, 1e-3] */
+        float              inv_Ts;            /* Inverse of carrier period (1/Ts) */
         epwm_action_mode_t pwma_mode;         /* Action mode for PWMA output */
         epwm_action_mode_t pwmb_mode;         /* Action mode for PWMB output */
         float              gate_on_voltage;   /* Output voltage when PWM is ON [0.0, 24.0] */
@@ -78,15 +79,15 @@ extern "C"
      */
     typedef struct
     {
-        epwm_count_direction_t counter_direction; /* Current counter direction */
-        float                  counter_value;     /* Current counter value [0.0, 1.0] */
-        float                  previous_counter;  /* Previous counter value for edge detection */
-        bool                   pwma_state;        /* Current PWMA output state */
-        bool                   pwmb_state;        /* Current PWMB output state */
-        bool                   first_run;         /* Flag for first execution step */
         /* Normalized dead time values (calculated once during init) */
         float dead_time_rising_norm;  /* Normalized dead time rising */
         float dead_time_falling_norm; /* Normalized dead time falling */
+
+        /* Pre-calculated compare values with dead time applied */
+        float cmpa_rising;  /* CMPA rising edge compare value */
+        float cmpa_falling; /* CMPA falling edge compare value */
+        float cmpb_rising;  /* CMPB rising edge compare value */
+        float cmpb_falling; /* CMPB falling edge compare value */
     } epwm_state_t;
 
     /**
@@ -104,6 +105,10 @@ extern "C"
         float                  counter_normalized; /* Current counter value [0.0, 1.0] */
         epwm_count_direction_t counter_direction;  /* Current counter direction */
         bool                   period_sync;        /* Clock output at start of PWM period */
+        float                  debug_1;            /* Debug variable 1 */
+        float                  debug_2;            /* Debug variable 2 */
+        float                  debug_3;            /* Debug variable 3 */
+        float                  debug_4;            /* Debug variable 4 */
     } epwm_outputs_t;
 
     /**

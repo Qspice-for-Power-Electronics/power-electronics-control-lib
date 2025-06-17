@@ -30,15 +30,15 @@
  */
 static inline void clear_state(epwm_state_t* const p_state)
 {
-    p_state->counter_direction = EPWM_COUNT_UP;
-    p_state->counter_value     = 0.0F;
-    p_state->previous_counter  = 0.0F;
-    p_state->pwma_state        = false;
-    p_state->pwmb_state        = false;
-    p_state->first_run         = true;
     /* Dead time values will be preserved/recalculated by reset function */
     p_state->dead_time_rising_norm  = 0.0F;
     p_state->dead_time_falling_norm = 0.0F;
+
+    /* Initialize compare values */
+    p_state->cmpa_rising  = 0.0F;
+    p_state->cmpa_falling = 0.0F;
+    p_state->cmpb_rising  = 0.0F;
+    p_state->cmpb_falling = 0.0F;
 }
 
 /**
@@ -62,54 +62,18 @@ static inline void clear_outputs(epwm_outputs_t* const p_outputs)
  */
 static void calculate_counter_state(epwm_t* const p_epwm, const float t, const float phase_offset)
 {
-    /* Phase offset is applied to the carrier itself */
-    float const carrier_raw = t / p_epwm->params.Ts + (phase_offset / p_epwm->params.Ts);
+    /* Phase offset is applied to the carrier itself - optimized with pre-computed inv_Ts */
+    float const carrier_raw = (t + phase_offset) * p_epwm->params.inv_Ts;
     float const carrier_mod = carrier_raw - floorf(carrier_raw);
 
     /* Generate center-aligned (triangular) carrier */
-    float counter_value = fabsf(2.0F * (carrier_mod - 0.5F));
+    p_epwm->outputs.counter_normalized = fabsf(2.0F * (carrier_mod - 0.5F));
 
     /* Determine counter direction based on position in cycle */
-    epwm_count_direction_t counter_dir;
-    if (carrier_mod < 0.5F)
-    {
-        counter_dir = EPWM_COUNT_UP;
-    }
-    else
-    {
-        counter_dir = EPWM_COUNT_DOWN;
-    }
+    p_epwm->outputs.counter_direction = (carrier_mod < 0.5F) ? EPWM_COUNT_UP : EPWM_COUNT_DOWN;
 
-    /* Update state */
-    p_epwm->state.counter_value     = counter_value;
-    p_epwm->state.counter_direction = counter_dir;
-
-    /* Set period_sync flag for start of period */
-    p_epwm->outputs.period_sync = (fmodf(carrier_raw, 1.0F) < EPWM_TOLERANCE);
-}
-
-/**
- * @brief   Detect compare crossing events.
- * @param   current_counter   Current counter value.
- * @param   previous_counter  Previous counter value.
- * @param   compare_value     Compare threshold value.
- * @param   current_dir       Current counter direction.
- * @param   trigger_dir       Required trigger direction.
- * @return  true if crossing detected, false otherwise.
- */
-static bool detect_compare_crossing(const float current_counter, const float previous_counter, const float compare_value,
-                                    const epwm_count_direction_t current_dir, const epwm_count_direction_t trigger_dir)
-{
-    // Only center-aligned mode supported
-    if (trigger_dir == EPWM_COUNT_UP && current_dir == EPWM_COUNT_UP)
-    {
-        return (previous_counter < compare_value) && (current_counter >= compare_value);
-    }
-    else if (trigger_dir == EPWM_COUNT_DOWN && current_dir == EPWM_COUNT_DOWN)
-    {
-        return (previous_counter > compare_value) && (current_counter <= compare_value);
-    }
-    return false;
+    /* Set period_sync flag for start of period - reuse carrier_mod instead of fmodf */
+    p_epwm->outputs.period_sync = (carrier_mod < EPWM_TOLERANCE);
 }
 
 /**
@@ -119,113 +83,120 @@ static bool detect_compare_crossing(const float current_counter, const float pre
 static void apply_dead_time(epwm_t* const p_epwm)
 {
     /* Convert dead time to normalized units */
-    /* Protect against division by zero and numerical instability */
-    if (p_epwm->params.Ts > EPWM_TOLERANCE)
-    {
-        p_epwm->state.dead_time_rising_norm  = p_epwm->params.dead_time_rising / p_epwm->params.Ts;
-        p_epwm->state.dead_time_falling_norm = p_epwm->params.dead_time_falling / p_epwm->params.Ts;
-    }
-    else
-    {
-        p_epwm->state.dead_time_rising_norm  = 0.0F;
-        p_epwm->state.dead_time_falling_norm = 0.0F;
-    }
+    p_epwm->state.dead_time_rising_norm  = p_epwm->params.dead_time_rising * p_epwm->params.inv_Ts;
+    p_epwm->state.dead_time_falling_norm = p_epwm->params.dead_time_falling * p_epwm->params.inv_Ts;
 }
 
 /**
- * @brief   Process PWM actions based on compare events.
+ * @brief   Calculate compare values with dead time applied.
+ * @param   p_epwm  Pointer to EPWM module instance.
+ * @param   cmpa    Compare A value [0.0, 1.0].
+ * @param   cmpb    Compare B value [0.0, 1.0].
+ */
+static void calculate_compare_values(epwm_t* const p_epwm, const float cmpa, const float cmpb)
+{
+    /* Pre-calculate half dead time values to avoid repeated multiplication */
+    float const half_rising_dt  = p_epwm->state.dead_time_rising_norm * 0.5F;
+    float const half_falling_dt = p_epwm->state.dead_time_falling_norm * 0.5F;
+
+    /* Calculate rising edge values (add half of rising dead time) */
+    float const cmpa_rising_raw = cmpa + half_rising_dt;
+    float const cmpb_rising_raw = cmpb + half_rising_dt;
+
+    /* Calculate falling edge values (subtract half of falling dead time) */
+    float const cmpa_falling_raw = cmpa - half_falling_dt;
+    float const cmpb_falling_raw = cmpb - half_falling_dt;
+
+    /* Clamp values to [0.0, 1.0] range - optimized clamping */
+    p_epwm->state.cmpa_rising  = (cmpa_rising_raw > 1.0F) ? 1.0F : ((cmpa_rising_raw < 0.0F) ? 0.0F : cmpa_rising_raw);
+    p_epwm->state.cmpb_rising  = (cmpb_rising_raw > 1.0F) ? 1.0F : ((cmpb_rising_raw < 0.0F) ? 0.0F : cmpb_rising_raw);
+    p_epwm->state.cmpa_falling = (cmpa_falling_raw > 1.0F) ? 1.0F : ((cmpa_falling_raw < 0.0F) ? 0.0F : cmpa_falling_raw);
+    p_epwm->state.cmpb_falling = (cmpb_falling_raw > 1.0F) ? 1.0F : ((cmpb_falling_raw < 0.0F) ? 0.0F : cmpb_falling_raw);
+}
+
+/**
+ * @brief   Process PWM actions based on direct comparison logic.
  * @param   p_epwm  Pointer to EPWM module instance.
  * @param   cmpa    Compare A value.
  * @param   cmpb    Compare B value.
  */
 static void process_pwm_actions(epwm_t* const p_epwm, const float cmpa, const float cmpb)
 {
-    bool pwma_state = p_epwm->state.pwma_state; /* Maintain current state */
-    bool pwmb_state = p_epwm->state.pwmb_state;
+    /* Use pre-calculated compare values from state */
+    float const cmpa_rising  = p_epwm->state.cmpa_rising;
+    float const cmpb_rising  = p_epwm->state.cmpb_rising;
+    float const cmpa_falling = p_epwm->state.cmpa_falling;
+    float const cmpb_falling = p_epwm->state.cmpb_falling;
 
-    /* Apply dead time to compare values and clamp to valid range [0.0, 1.0] */
-    float const cmpa_rising  = fminf(1.0F, fmaxf(0.0F, cmpa + (p_epwm->state.dead_time_rising_norm * 0.5F)));
-    float const cmpa_falling = fminf(1.0F, fmaxf(0.0F, cmpa - (p_epwm->state.dead_time_falling_norm * 0.5F)));
-    float const cmpb_rising  = fminf(1.0F, fmaxf(0.0F, cmpb + (p_epwm->state.dead_time_rising_norm * 0.5F)));
-    float const cmpb_falling = fminf(1.0F, fmaxf(0.0F, cmpb - (p_epwm->state.dead_time_falling_norm * 0.5F)));
-
-    /* Process PWMA based on action mode */
+    p_epwm->outputs.debug_1 = cmpa_rising;                    /* Debug: store CMPA rising */
+    p_epwm->outputs.debug_2 = cmpa_falling;                   /* Debug: store CMPA falling */
+    p_epwm->outputs.debug_3 = cmpb_rising;                    /* Debug: store CMPB rising */
+    p_epwm->outputs.debug_4 = cmpb_falling;                   /* Debug: store
+                  
+                      /* Current counter value */
+    float const counter = p_epwm->outputs.counter_normalized; /* Process PWMA based on action mode */
     switch (p_epwm->params.pwma_mode)
     {
     case EPWM_ACTION_CMPB_DOWN_CMPA_UP:
-        /* Check for rising edge on CMPB down-count */
-        if (detect_compare_crossing(p_epwm->state.counter_value, p_epwm->state.previous_counter, cmpb_rising, p_epwm->state.counter_direction,
-                                    EPWM_COUNT_DOWN))
+        /* PWM rising edge on CMPB down-count, falling edge on CMPA up-count */
+        if (counter > cmpb_rising)
         {
-            pwma_state = true;
+            p_epwm->outputs.PWMA = p_epwm->params.gate_on_voltage;
         }
-        /* Check for falling edge on CMPA up-count */
-        if (detect_compare_crossing(p_epwm->state.counter_value, p_epwm->state.previous_counter, cmpa_falling, p_epwm->state.counter_direction,
-                                    EPWM_COUNT_UP))
+        else if (counter < cmpa_falling)
         {
-            pwma_state = false;
+            p_epwm->outputs.PWMA = p_epwm->params.gate_off_voltage;
         }
+        /* Keep current state when between CMPA and CMPB */
         break;
 
     case EPWM_ACTION_CMPA_DOWN_CMPB_UP:
-        /* Check for rising edge on CMPA down-count */
-        if (detect_compare_crossing(p_epwm->state.counter_value, p_epwm->state.previous_counter, cmpa_rising, p_epwm->state.counter_direction,
-                                    EPWM_COUNT_DOWN))
+        /* PWM rising edge on CMPA down-count, falling edge on CMPB up-count */
+        if (counter > cmpa_rising)
         {
-            pwma_state = true;
+            p_epwm->outputs.PWMA = p_epwm->params.gate_on_voltage;
         }
-        /* Check for falling edge on CMPB up-count */
-        if (detect_compare_crossing(p_epwm->state.counter_value, p_epwm->state.previous_counter, cmpb_falling, p_epwm->state.counter_direction,
-                                    EPWM_COUNT_UP))
+        else if (counter < cmpb_falling)
         {
-            pwma_state = false;
+            p_epwm->outputs.PWMA = p_epwm->params.gate_off_voltage;
         }
+        /* Keep current state when between CMPB and CMPA */
         break;
 
     default:
         break;
-    }
-
-    /* Process PWMB based on action mode */
+    } /* Process PWMB based on action mode */
     switch (p_epwm->params.pwmb_mode)
     {
     case EPWM_ACTION_CMPB_DOWN_CMPA_UP:
-        /* Check for rising edge on CMPB down-count */
-        if (detect_compare_crossing(p_epwm->state.counter_value, p_epwm->state.previous_counter, cmpb_rising, p_epwm->state.counter_direction,
-                                    EPWM_COUNT_DOWN))
+        /* PWM rising edge on CMPB down-count, falling edge on CMPA up-count */
+        if (counter > cmpb_rising)
         {
-            pwmb_state = true;
+            p_epwm->outputs.PWMB = p_epwm->params.gate_on_voltage;
         }
-        /* Check for falling edge on CMPA up-count */
-        if (detect_compare_crossing(p_epwm->state.counter_value, p_epwm->state.previous_counter, cmpa_falling, p_epwm->state.counter_direction,
-                                    EPWM_COUNT_UP))
+        else if (counter < cmpa_falling)
         {
-            pwmb_state = false;
+            p_epwm->outputs.PWMB = p_epwm->params.gate_off_voltage;
         }
+        /* Keep current state when between CMPA and CMPB */
         break;
 
     case EPWM_ACTION_CMPA_DOWN_CMPB_UP:
-        /* Check for rising edge on CMPA down-count */
-        if (detect_compare_crossing(p_epwm->state.counter_value, p_epwm->state.previous_counter, cmpa_rising, p_epwm->state.counter_direction,
-                                    EPWM_COUNT_DOWN))
+        /* PWM rising edge on CMPA down-count, falling edge on CMPB up-count */
+        if (counter > cmpa_rising)
         {
-            pwmb_state = true;
+            p_epwm->outputs.PWMB = p_epwm->params.gate_on_voltage;
         }
-        /* Check for falling edge on CMPB up-count */
-        if (detect_compare_crossing(p_epwm->state.counter_value, p_epwm->state.previous_counter, cmpb_falling, p_epwm->state.counter_direction,
-                                    EPWM_COUNT_UP))
+        else if (counter < cmpb_falling)
         {
-            pwmb_state = false;
+            p_epwm->outputs.PWMB = p_epwm->params.gate_off_voltage;
         }
+        /* Keep current state when between CMPB and CMPA */
         break;
 
     default:
         break;
     }
-
-    /* Update states */
-    p_epwm->state.pwma_state = pwma_state;
-    p_epwm->state.pwmb_state = pwmb_state;
 }
 
 /**************************** PUBLIC FUNCTIONS *******************************/
@@ -243,6 +214,7 @@ void epwm_init(epwm_t* const p_epwm, const epwm_params_t* const p_params)
     assert(p_params->dead_time_falling >= 0.0F);
 
     p_epwm->params.Ts                = p_params->Ts;
+    p_epwm->params.inv_Ts            = 1.0F / p_epwm->params.Ts;
     p_epwm->params.pwma_mode         = p_params->pwma_mode;
     p_epwm->params.pwmb_mode         = p_params->pwmb_mode;
     p_epwm->params.gate_on_voltage   = p_params->gate_on_voltage;
@@ -285,19 +257,6 @@ void epwm_reset(epwm_t* const p_epwm)
  */
 void epwm_step(epwm_t* const p_epwm, const float t, const float cmpa, const float cmpb, const bool sync_in)
 {
-    /* Handle first run initialization */
-    if (p_epwm->state.first_run)
-    {
-        p_epwm->state.first_run = false;
-        /* Initialize with actual time */
-        calculate_counter_state(p_epwm, t, p_epwm->params.phase_offset);
-        p_epwm->state.previous_counter = p_epwm->state.counter_value;
-        return; /* Skip action processing on first step */
-    }
-
-    /* Store previous counter value for edge detection */
-    p_epwm->state.previous_counter = p_epwm->state.counter_value;
-
     /* Calculate current counter value with phase offset */
     float phase_offset = p_epwm->params.phase_offset;
 
@@ -311,14 +270,9 @@ void epwm_step(epwm_t* const p_epwm, const float t, const float cmpa, const floa
     /* Generate center-aligned counter */
     calculate_counter_state(p_epwm, t, phase_offset);
 
+    /* Calculate compare values with dead time applied */
+    calculate_compare_values(p_epwm, cmpa, cmpb);
+
     /* Process PWM actions */
     process_pwm_actions(p_epwm, cmpa, cmpb);
-
-    /* Generate outputs */
-    p_epwm->outputs.PWMA = p_epwm->state.pwma_state ? p_epwm->params.gate_on_voltage : p_epwm->params.gate_off_voltage;
-    p_epwm->outputs.PWMB = p_epwm->state.pwmb_state ? p_epwm->params.gate_on_voltage : p_epwm->params.gate_off_voltage;
-
-    /* Update output information */
-    p_epwm->outputs.counter_normalized = p_epwm->state.counter_value;
-    p_epwm->outputs.counter_direction  = p_epwm->state.counter_direction;
 }

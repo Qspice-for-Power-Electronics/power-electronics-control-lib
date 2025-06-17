@@ -137,10 +137,10 @@ extern "C" __declspec(dllexport) void ctrl(void** opaque, double t, union uData*
     float&       Out7     = data[31].f;  // output
     float&       Out8     = data[32].f;  // output
     float&       Out9     = data[33].f;  // output
-    float const& Out10    = data[34].f;  // output
-    float const& Out11    = data[35].f;  // output
-    float const& Out12    = data[36].f;  // output
-    float const& Out13    = data[37].f;  // output
+    float&       Out10    = data[34].f;  // output
+    float&       Out11    = data[35].f;  // output
+    float&       Out12    = data[36].f;  // output
+    float&       Out13    = data[37].f;  // output
     float const& Out14    = data[38].f;  // output
     float const& Out15    = data[39].f;  // output
     float const& Out16    = data[40].f;  // output
@@ -182,12 +182,12 @@ extern "C" __declspec(dllexport) void ctrl(void** opaque, double t, union uData*
             .Ts                = 10e-6f,  // 10µs sampling time (equivalent to 100kHz carrier)
             .pwma_mode         = EPWM_ACTION_CMPB_DOWN_CMPA_UP,
             .pwmb_mode         = EPWM_ACTION_CMPA_DOWN_CMPB_UP,  // Complementary output
-            .gate_on_voltage   = 15.0f,
+            .gate_on_voltage   = 1.0f,
             .gate_off_voltage  = 0.0f,
             .sync_enable       = false,
             .phase_offset      = 0.0f,
-            .dead_time_rising  = 200e-9f,  // 200ns rising dead time
-            .dead_time_falling = 150e-9f   // 150ns falling dead time
+            .dead_time_rising  = 400e-9f,  // 200ns rising dead time
+            .dead_time_falling = 100e-9f   // 150ns falling dead time
         };
 
         // ePWM1 (Master): No phase offset
@@ -250,7 +250,7 @@ extern "C" __declspec(dllexport) void ctrl(void** opaque, double t, union uData*
     Out2 = bpwm_mod.outputs.CenterAligned;
     Out3 = bpwm_mod.outputs.SawtoothUp;
     Out4 = bpwm_mod.outputs.SawtoothDown;
-    Out5 = bpwm_mod.outputs.ClkOut ? 1.0f : 0.0f; /* Convert boolean to float for QSPICE */
+    Out5 = static_cast<float>(bpwm_mod.outputs.ClkOut); /* Convert boolean to float for QSPICE */
 
     // Connect ePWM outputs to QSPICE pins:
     // ePWM1: Q1A, Q2A
@@ -269,8 +269,13 @@ extern "C" __declspec(dllexport) void ctrl(void** opaque, double t, union uData*
     Q7 = epwm4.outputs.PWMA;
     Q8 = epwm4.outputs.PWMB;
 
+
     // Debug outputs from ePWM1 to monitor its behavior
-    Out7 = epwm1.outputs.counter_normalized;                     // Counter value [0.0, 1.0]
-    Out8 = static_cast<float>(epwm1.outputs.counter_direction);  // Counter direction
-    Out9 = epwm1.outputs.period_sync ? 15.0f : 0.0f;             // Period sync signal
+    Out7  = epwm1.outputs.counter_normalized;                     // Counter value [0.0, 1.0]
+    Out8  = static_cast<float>(epwm1.outputs.counter_direction);  // Counter direction
+    Out9  = static_cast<float>(epwm1.outputs.period_sync);        // Period sync signal
+    Out10 = static_cast<float>(epwm1.outputs.debug_1);            // Debug variable 1
+    Out11 = static_cast<float>(epwm1.outputs.debug_2);            // Debug variable 2
+    Out12 = static_cast<float>(epwm1.outputs.debug_3);            // Debug variable 3
+    Out13 = static_cast<float>(epwm1.outputs.debug_4);            // Debug variable 4
 }
