@@ -15,6 +15,7 @@
 #ifndef MATH_CONSTANTS_H
 #define MATH_CONSTANTS_H
 
+#include <math.h>
 #ifdef __cplusplus
 extern "C"
 {

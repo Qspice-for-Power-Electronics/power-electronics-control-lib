@@ -13,8 +13,6 @@
 /********************************* INCLUDES **********************************/
 #include "bpwm.h"
 #include "math_constants.h"
-#include <assert.h>
-#include <math.h>
 
 /********************************* DEFINES ***********************************/
 
@@ -82,9 +80,9 @@ void bpwm_reset(bpwm_t* const p_bpwm)
 void bpwm_step(bpwm_t* const p_bpwm, const float t, const float duty, const float phase)
 {
     /* Phase offset is applied to the carrier itself, so all outputs are phase-shifted */
-    float const phase_frac  = phase / (2.0F * M_PI); /* -1..1 for -2pi..2pi */
-    float       carrier_raw = (t / p_bpwm->params.Ts) + phase_frac;
-    float       carrier     = carrier_raw - floorf(carrier_raw);
+    float const phase_frac  = phase / (2.0F * (float)M_PI); /* -1..1 for -2pi..2pi */
+    float const carrier_raw = (t / p_bpwm->params.Ts) + phase_frac;
+    float const carrier     = carrier_raw - floorf(carrier_raw);
 
     /* Generate all carrier waveforms */
     p_bpwm->outputs.SawtoothUp    = carrier;

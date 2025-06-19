@@ -1,3 +1,4 @@
+@echo off
 REM *************************** In The Name Of God ***************************
 REM * @file    cleanup_code.bat
 REM * @brief   Batch script for comprehensive code cleanup and quality improvements
@@ -10,7 +11,6 @@ REM * @license This work is dedicated to the public domain under CC0 1.0.
 REM *          Please use it for good and beneficial purposes!
 REM ***************************************************************************
 
-@echo off
 REM ================================================================================
 REM Power Electronics Control Library - Code Cleanup Script
 REM ================================================================================
@@ -161,6 +161,13 @@ for /f "delims=" %%i in ('scripts\project_config.bat --clang-flags') do (
     set CLANG_INCLUDE_PATHS=!CLANG_INCLUDE_PATHS! %%i
 )
 
+REM Add Digital Mars Compiler include paths for clang-tidy compatibility
+if exist "compiler\include" (
+    set CLANG_INCLUDE_PATHS=!CLANG_INCLUDE_PATHS! -I"compiler\include"
+)
+REM Also add system include paths that clang-tidy might need
+set CLANG_INCLUDE_PATHS=!CLANG_INCLUDE_PATHS! -isystem compiler\include
+
 if "!DRY_RUN!"=="true" (
     set TIDY_FLAGS=--format-style=file --quiet
 ) else (
@@ -175,8 +182,13 @@ for /r "modules" %%f in (*.cpp *.h) do (
     set /a FILES_PROCESSED+=1
     echo [!FILES_PROCESSED!/!SOURCE_FILE_COUNT!] Processing %%~nxf for const correctness...
     
-    REM Apply core fixes with proper include paths
-    clang-tidy !TIDY_FLAGS! --checks="!CORE_CHECKS!" "%%f" -- -std=c++11 !CLANG_INCLUDE_PATHS!
+    REM Force C++ mode for all files to avoid language detection issues
+    REM Use -x c++ to explicitly tell clang-tidy to treat the file as C++
+    set LANG_FLAGS=-x c++ -std=c++11
+    if /i "%%~xf"==".c" set LANG_FLAGS=-x c -std=c99
+    
+    REM Apply core fixes with proper include paths and explicit language mode
+    clang-tidy !TIDY_FLAGS! --checks="!CORE_CHECKS!" "%%f" -- !LANG_FLAGS! !CLANG_INCLUDE_PATHS!
     if errorlevel 1 (
         echo Warning: Issues found in %%f during core cleanup
         set /a ERROR_COUNT+=1
@@ -254,16 +266,22 @@ echo ===========================================================================
 echo PHASE 3: Cleaning includes and advanced analysis...
 echo ================================================================================
 
-REM Define advanced cleanup checks (includes, performance, readability)
-set ADVANCED_CHECKS=misc-include-cleaner,performance-*,readability-redundant-*,modernize-redundant-*,bugprone-*
+REM Define advanced cleanup checks (performance, readability, but excluding aggressive include cleaner)
+set ADVANCED_CHECKS=performance-*,readability-redundant-*,modernize-redundant-*,bugprone-*
 
 REM Process files for advanced cleanup
 set FILES_ANALYZED=0
 for /r "modules" %%f in (*.cpp *.h) do (
     set /a FILES_ANALYZED+=1
     echo [!FILES_ANALYZED!/!SOURCE_FILE_COUNT!] Advanced analysis of %%~nxf...
-      REM Apply advanced fixes with proper include paths
-    clang-tidy !TIDY_FLAGS! --checks="!ADVANCED_CHECKS!" "%%f" -- -std=c++11 !CLANG_INCLUDE_PATHS!
+    
+    REM Force C++ mode for all files to avoid language detection issues
+    REM Use -x c++ to explicitly tell clang-tidy to treat the file as C++
+    set LANG_FLAGS=-x c++ -std=c++11
+    if /i "%%~xf"==".c" set LANG_FLAGS=-x c -std=c99
+    
+    REM Apply advanced fixes with proper include paths and explicit language mode
+    clang-tidy !TIDY_FLAGS! --checks="!ADVANCED_CHECKS!" "%%f" -- !LANG_FLAGS! !CLANG_INCLUDE_PATHS!
     if errorlevel 1 (
         echo Warning: Advanced issues found in %%f
         set /a ERROR_COUNT+=1
@@ -285,8 +303,14 @@ REM Run comprehensive analysis for remaining issues (report only)
 echo Analyzing remaining code quality issues...
 set REMAINING_ISSUES=0
 
-for /r "modules" %%f in (*.cpp *.h) do (    REM Count remaining issues (don't fix, just report) with proper include paths
-    clang-tidy --quiet --checks="-*,clang-diagnostic-*,clang-analyzer-*,cert-*,misc-*,readability-*,performance-*,bugprone-*,modernize-*,portability-*" "%%f" -- -std=c++11 !CLANG_INCLUDE_PATHS! 2>nul | find /c "warning:" >temp_count.txt
+for /r "modules" %%f in (*.cpp *.h) do (
+    REM Force C++ mode for all files to avoid language detection issues
+    REM Use -x c++ to explicitly tell clang-tidy to treat the file as C++
+    set LANG_FLAGS=-x c++ -std=c++11
+    if /i "%%~xf"==".c" set LANG_FLAGS=-x c -std=c99
+    
+    REM Count remaining issues (don't fix, just report) with proper include paths and explicit language mode
+    clang-tidy --quiet --checks="-*,clang-diagnostic-*,clang-analyzer-*,cert-*,misc-*,readability-*,performance-*,bugprone-*,modernize-*,portability-*" "%%f" -- !LANG_FLAGS! !CLANG_INCLUDE_PATHS! 2>nul | find /c "warning:" >temp_count.txt
     set /p FILE_ISSUES=<temp_count.txt
     if !FILE_ISSUES! gtr 0 (
         echo   %%~nxf: !FILE_ISSUES! remaining issues

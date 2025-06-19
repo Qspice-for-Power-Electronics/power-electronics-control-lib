@@ -99,10 +99,6 @@ extern "C"
         float                  counter_normalized; /* Current counter value [0.0, 1.0] */
         epwm_count_direction_t counter_direction;  /* Current counter direction */
         bool                   period_sync;        /* Clock output at start of PWM period */
-        float                  cmpa_lead_value;    /* CMPA leading edge compare value with dead time */
-        float                  cmpa_lag_value;     /* CMPA lagging edge compare value with dead time */
-        float                  cmpb_lead_value;    /* CMPB leading edge compare value with dead time */
-        float                  cmpb_lag_value;     /* CMPB lagging edge compare value with dead time */
     } epwm_outputs_t;
 
     /**

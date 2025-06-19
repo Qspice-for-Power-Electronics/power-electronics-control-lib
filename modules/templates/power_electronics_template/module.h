@@ -28,8 +28,7 @@ extern "C"
 {
 #endif
 
-/********************************* INCLUDES **********************************/
-#include <stdbool.h>
+    /********************************* INCLUDES **********************************/
 #include <stdint.h>
 
     /***************************** TYPE DEFINITIONS ******************************/
@@ -46,8 +45,14 @@ extern "C"
      */
     typedef enum
     {
-        MODULE_MODE1 = 0, /* [REPLACE: Description of first mode/type] */
-        MODULE_MODE2 = 1  /* [REPLACE: Description of second mode/type] */
+        MODULE_MODE1 = 0u, /* [REPLACE: Description of first mode/type] */
+        MODULE_MODE2 = 1u, /* [REPLACE: Description of second mode/type] */
+        MODULE_MODE3 = 2u, /* [REPLACE: Description of third mode/type] */
+        MODULE_MODE4 = 3u, /* [REPLACE: Description of fourth mode/type] */
+        MODULE_MODE5 = 4u, /* [REPLACE: Description of fifth mode/type] */
+        MODULE_MODE6 = 5u, /* [REPLACE: Description of sixth mode/type] */
+        MODULE_MODE7 = 6u, /* [REPLACE: Description of seventh mode/type] */
+        MODULE_MODE8 = 7u  /* [REPLACE: Description of eighth mode/type] */
     } module_mode_t;
 
     /**
@@ -58,9 +63,9 @@ extern "C"
      */
     typedef struct
     {
-        float   param1;         /* [REPLACE: Description of param1 [MIN, MAX]] */
-        int32_t param2;         /* [REPLACE: Description of param2 [MIN, MAX]] */
-        bool    enable_feature; /* [REPLACE: Description of feature flag] */
+        float param1;         /* [REPLACE: Description of param1 [MIN, MAX]] */
+        int   param2;         /* [REPLACE: Description of param2 [MIN, MAX]] */
+        bool  enable_feature; /* [REPLACE: Description of feature flag] */
     } module_params_t;
 
     /**
@@ -71,8 +76,8 @@ extern "C"
      */
     typedef struct
     {
-        float   internal_value; /* [REPLACE: Description of internal value] */
-        int32_t counter;        /* [REPLACE: Description of counter] */
+        float internal_value; /* [REPLACE: Description of internal value] */
+        int   counter;        /* [REPLACE: Description of counter] */
     } module_state_t;
 
     /**

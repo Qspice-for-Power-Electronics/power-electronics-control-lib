@@ -14,8 +14,6 @@
 /********************************* INCLUDES **********************************/
 #include "epwm.h"
 #include "math_constants.h"
-#include <assert.h>
-#include <math.h>
 
 /********************************* DEFINES ***********************************/
 
@@ -130,12 +128,6 @@ static void process_pwm_actions(epwm_t* const p_epwm, const float cmpa, const fl
     float const counter     = p_epwm->outputs.counter_normalized;
     bool const  is_count_up = (p_epwm->outputs.counter_direction == EPWM_COUNT_UP);
 
-    /* Output compare values for monitoring and debugging */
-    p_epwm->outputs.cmpa_lead_value = cmpa_lead; /* Store CMPA leading edge value */
-    p_epwm->outputs.cmpa_lag_value  = cmpa_lag;  /* Store CMPA lagging edge value */
-    p_epwm->outputs.cmpb_lead_value = cmpb_lead; /* Store CMPB leading edge value */
-    p_epwm->outputs.cmpb_lag_value  = cmpb_lag;
-
     /* Process PWM based on mode using comparison logic */
     switch (p_epwm->params.pwm_mode)
     {
@@ -198,10 +190,6 @@ static void process_pwm_actions(epwm_t* const p_epwm, const float cmpa, const fl
  */
 void epwm_init(epwm_t* const p_epwm, const epwm_params_t* const p_params)
 {
-    /* Validate parameters */
-    assert(p_params->Ts > 0.0F);
-    assert(p_params->dead_time_rising >= 0.0F);
-    assert(p_params->dead_time_falling >= 0.0F);
     p_epwm->params.Ts                = p_params->Ts;
     p_epwm->params.inv_Ts            = 1.0F / p_epwm->params.Ts;
     p_epwm->params.pwm_mode          = p_params->pwm_mode;

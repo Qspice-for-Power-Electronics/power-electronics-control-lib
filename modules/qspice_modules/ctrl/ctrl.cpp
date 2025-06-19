@@ -124,10 +124,10 @@ extern "C" __declspec(dllexport) void ctrl(void** opaque, double t, union uData*
     float&       Q3B      = data[18].f;  // output
     float&       Q4A      = data[19].f;  // output
     float&       Q4B      = data[20].f;  // output
-    float&       Q5       = data[21].f;  // output
-    float&       Q6       = data[22].f;  // output
-    float&       Q7       = data[23].f;  // output
-    float&       Q8       = data[24].f;  // output
+    float const& Q5       = data[21].f;  // output
+    float const& Q6       = data[22].f;  // output
+    float const& Q7       = data[23].f;  // output
+    float const& Q8       = data[24].f;  // output
     float&       Out1     = data[25].f;  // output
     float&       Out2     = data[26].f;  // output
     float&       Out3     = data[27].f;  // output
@@ -157,6 +157,20 @@ extern "C" __declspec(dllexport) void ctrl(void** opaque, double t, union uData*
     float const& Out27    = data[51].f;  // output
     float const& Out28    = data[52].f;  // output
 
+    // Suppress unused variable warnings for inputs not currently used
+    (void)V_ac;
+    (void)I_ac;
+    (void)Itank_ac;
+    (void)In2;
+    (void)In3;
+    (void)In4;
+    (void)In5;
+    (void)In6;
+    (void)In7;
+    (void)Itank_dc;
+    (void)V_dc;
+    (void)I_dc;
+
     // Module initialization code
     static bpwm_t bpwm_mod;
     static iir_t  lpf;
@@ -176,7 +190,7 @@ extern "C" __declspec(dllexport) void ctrl(void** opaque, double t, union uData*
         // Initialize IIR filter
         iir_params_t const lpf_params = {1e-4f, 100.0f, IIR_LOWPASS, 0.0f};  // Ts, fc, type=lowpass, a=auto
         iir_init(&lpf, &lpf_params);                                         // Initialize ePWM modules        // Common ePWM parameters
-        epwm_params_t base_epwm_params = {
+        epwm_params_t const base_epwm_params = {
             .Ts                = 10e-6f,  // 10µs sampling time (equivalent to 100kHz carrier)
             .pwm_mode          = EPWM_MODE_ACTIVE_HIGH_CMPA_FIRST,
             .gate_on_voltage   = 1.0f,
@@ -211,17 +225,17 @@ extern "C" __declspec(dllexport) void ctrl(void** opaque, double t, union uData*
     bpwm_step(&bpwm_mod, static_cast<float>(t), 0.5f, 0.0f);  // Example: 50% duty cycle, 0 phase offset
 
     // Update ePWM modules with different duty cycles
-    float cmpa1 = 0.25f;  // 25% duty cycle for ePWM1
-    float cmpb1 = 0.75f;
+    float const cmpa1 = 0.25f;  // 25% duty cycle for ePWM1
+    float const cmpb1 = 0.75f;
 
-    float cmpa2 = 0.30f;  // 30% duty cycle for ePWM2
-    float cmpb2 = 0.70f;
+    float const cmpa2 = 0.30f;  // 30% duty cycle for ePWM2
+    float const cmpb2 = 0.70f;
 
-    float cmpa3 = 0.35f;  // 35% duty cycle for ePWM3
-    float cmpb3 = 0.65f;
+    float const cmpa3 = 0.35f;  // 35% duty cycle for ePWM3
+    float const cmpb3 = 0.65f;
 
-    float cmpa4 = 0.40f;  // 40% duty cycle for ePWM4
-    float cmpb4 = 0.60f;
+    float const cmpa4 = 0.40f;  // 40% duty cycle for ePWM4
+    float const cmpb4 = 0.60f;
 
     // Execute PWM steps (epwm1 is master, others are synchronized with its period_sync signal)
     epwm_step(&epwm1, static_cast<float>(t), cmpa1, cmpb1, false);
@@ -269,8 +283,8 @@ extern "C" __declspec(dllexport) void ctrl(void** opaque, double t, union uData*
     Out7  = epwm1.outputs.counter_normalized;                     // Counter value [0.0, 1.0]
     Out8  = static_cast<float>(epwm1.outputs.counter_direction);  // Counter direction
     Out9  = static_cast<float>(epwm1.outputs.period_sync);        // Period sync signal
-    Out10 = static_cast<float>(epwm1.outputs.cmpa_lead_value);    // CMPA leading edge value
-    Out11 = static_cast<float>(epwm1.outputs.cmpa_lag_value);     // CMPA lagging edge value
-    Out12 = static_cast<float>(epwm1.outputs.cmpb_lead_value);    // CMPB leading edge value
-    Out13 = static_cast<float>(epwm1.outputs.cmpb_lag_value);     // CMPB lagging edge value
+    Out10 = epwm1.state.cmpa_lead;                                // CMPA leading edge value
+    Out11 = epwm1.state.cmpa_lag;                                 // CMPA lagging edge value
+    Out12 = epwm1.state.cmpb_lead;                                // CMPB leading edge value
+    Out13 = epwm1.state.cmpb_lag;                                 // CMPB lagging edge value
 }
