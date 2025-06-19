@@ -175,22 +175,17 @@ extern "C" __declspec(dllexport) void ctrl(void** opaque, double t, union uData*
 
         // Initialize IIR filter
         iir_params_t const lpf_params = {1e-4f, 100.0f, IIR_LOWPASS, 0.0f};  // Ts, fc, type=lowpass, a=auto
-        iir_init(&lpf, &lpf_params);
-
-        // Initialize ePWM modules        // Common ePWM parameters
+        iir_init(&lpf, &lpf_params);                                         // Initialize ePWM modules        // Common ePWM parameters
         epwm_params_t base_epwm_params = {
             .Ts                = 10e-6f,  // 10µs sampling time (equivalent to 100kHz carrier)
-            .pwma_mode         = EPWM_ACTION_CMPB_DOWN_CMPA_UP,
-            .pwmb_mode         = EPWM_ACTION_CMPA_DOWN_CMPB_UP,  // Complementary output
+            .pwm_mode          = EPWM_MODE_ACTIVE_HIGH_CMPA_FIRST,
             .gate_on_voltage   = 1.0f,
             .gate_off_voltage  = 0.0f,
             .sync_enable       = false,
             .phase_offset      = 0.0f,
             .dead_time_rising  = 400e-9f,  // 200ns rising dead time
             .dead_time_falling = 100e-9f   // 150ns falling dead time
-        };
-
-        // ePWM1 (Master): No phase offset
+        };  // ePWM1 (Master): No phase offset
         epwm_init(&epwm1, &base_epwm_params);  // ePWM2: 90° phase shift (quarter period)
         epwm_params_t epwm2_params = base_epwm_params;
         epwm2_params.sync_enable   = true;
@@ -255,27 +250,27 @@ extern "C" __declspec(dllexport) void ctrl(void** opaque, double t, union uData*
     // Connect ePWM outputs to QSPICE pins:
     // ePWM1: Q1A, Q2A
     Q1A = epwm1.outputs.PWMA;
-    Q2A = epwm1.outputs.PWMB;
+    Q1B = epwm1.outputs.PWMB;
 
-    // ePWM2: Q3A, Q4A
-    Q3A = epwm2.outputs.PWMA;
-    Q4A = epwm2.outputs.PWMB;
+    // ePWM2: Q1A, Q2B
+    Q2A = epwm2.outputs.PWMA;
+    Q2B = epwm2.outputs.PWMB;
 
-    // ePWM3: Q5, Q6
-    Q5 = epwm3.outputs.PWMA;
-    Q6 = epwm3.outputs.PWMB;
+    // ePWM3: Q3A, Q3B
+    Q3A = epwm3.outputs.PWMA;
+    Q3B = epwm3.outputs.PWMB;
 
-    // ePWM4: Q7, Q8
-    Q7 = epwm4.outputs.PWMA;
-    Q8 = epwm4.outputs.PWMB;
+    // ePWM4: Q4A, Q4B
+    Q4A = epwm4.outputs.PWMA;
+    Q4B = epwm4.outputs.PWMB;
 
 
     // Debug outputs from ePWM1 to monitor its behavior
     Out7  = epwm1.outputs.counter_normalized;                     // Counter value [0.0, 1.0]
     Out8  = static_cast<float>(epwm1.outputs.counter_direction);  // Counter direction
     Out9  = static_cast<float>(epwm1.outputs.period_sync);        // Period sync signal
-    Out10 = static_cast<float>(epwm1.outputs.debug_1);            // Debug variable 1
-    Out11 = static_cast<float>(epwm1.outputs.debug_2);            // Debug variable 2
-    Out12 = static_cast<float>(epwm1.outputs.debug_3);            // Debug variable 3
-    Out13 = static_cast<float>(epwm1.outputs.debug_4);            // Debug variable 4
+    Out10 = static_cast<float>(epwm1.outputs.cmpa_lead_value);    // CMPA leading edge value
+    Out11 = static_cast<float>(epwm1.outputs.cmpa_lag_value);     // CMPA lagging edge value
+    Out12 = static_cast<float>(epwm1.outputs.cmpb_lead_value);    // CMPB leading edge value
+    Out13 = static_cast<float>(epwm1.outputs.cmpb_lag_value);     // CMPB lagging edge value
 }

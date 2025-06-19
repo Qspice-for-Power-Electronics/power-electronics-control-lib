@@ -34,44 +34,38 @@ extern "C"
      */
     typedef enum
     {
-        EPWM_COUNT_UP   = 0, /* Counter is incrementing */
-        EPWM_COUNT_DOWN = 1  /* Counter is decrementing */
-    } epwm_count_direction_t;
-
-    /**
-     * @brief Enumeration for PWM action modes.
-     * Defines when PWM outputs change state relative to compare events.
-     */
+        EPWM_COUNT_UP   = 0,  /* Counter is incrementing */
+        EPWM_COUNT_DOWN = 1   /* Counter is decrementing */
+    } epwm_count_direction_t; /**
+                               * @brief Enumeration for PWM action modes.
+                               * Defines complementary PWM behavior for both outputs.
+                               */
     typedef enum
     {
-        EPWM_ACTION_CMPB_DOWN_CMPA_UP = 0, /* Set on CMPB down-count, Clear on CMPA up-count */
-        EPWM_ACTION_CMPA_DOWN_CMPB_UP = 1  /* Set on CMPA down-count, Clear on CMPB up-count */
-    } epwm_action_mode_t;
-
-    /**
-     * @brief Parameters for EPWM module configuration.
-     * Ts: carrier period in seconds [1e-6, 1e-3]
-     * pwma_mode: action mode for PWMA output
-     * pwmb_mode: action mode for PWMB output
-     * gate_on_voltage: output voltage when PWM is ON [0.0, 24.0]
-     * gate_off_voltage: output voltage when PWM is OFF [0.0, 24.0]
-     * sync_enable: enable external synchronization
-     * phase_offset: phase offset in seconds
-     * dead_time_rising: dead time for rising edges in seconds
-     * dead_time_falling: dead time for falling edges in seconds
-     */
+        EPWM_MODE_ACTIVE_HIGH_CMPA_FIRST  = 0, /* PWMA active high on up-count CMPA, PWMB complementary */
+        EPWM_MODE_ACTIVE_HIGH_CMPA_SECOND = 1  /* PWMA active high on down-count CMPA, PWMB complementary */
+    } epwm_mode_t;                             /**
+                                                * @brief Parameters for EPWM module configuration.
+                                                * Ts: carrier period in seconds [1e-6, 1e-3]
+                                                * pwm_mode: PWM mode defining complementary output behavior
+                                                * gate_on_voltage: output voltage when PWM is ON [0.0, 24.0]
+                                                * gate_off_voltage: output voltage when PWM is OFF [0.0, 24.0]
+                                                * sync_enable: enable external synchronization
+                                                * phase_offset: phase offset in seconds
+                                                * dead_time_rising: dead time for rising edges in seconds
+                                                * dead_time_falling: dead time for falling edges in seconds
+                                                */
     typedef struct
     {
-        float              Ts;                /* Carrier period in seconds [1e-6, 1e-3] */
-        float              inv_Ts;            /* Inverse of carrier period (1/Ts) */
-        epwm_action_mode_t pwma_mode;         /* Action mode for PWMA output */
-        epwm_action_mode_t pwmb_mode;         /* Action mode for PWMB output */
-        float              gate_on_voltage;   /* Output voltage when PWM is ON [0.0, 24.0] */
-        float              gate_off_voltage;  /* Output voltage when PWM is OFF [0.0, 24.0] */
-        bool               sync_enable;       /* Enable external synchronization */
-        float              phase_offset;      /* Phase offset in seconds */
-        float              dead_time_rising;  /* Dead time for rising edges in seconds */
-        float              dead_time_falling; /* Dead time for falling edges in seconds */
+        float       Ts;                /* Carrier period in seconds [1e-6, 1e-3] */
+        float       inv_Ts;            /* Inverse of carrier period (1/Ts) */
+        epwm_mode_t pwm_mode;          /* PWM mode defining complementary output behavior */
+        float       gate_on_voltage;   /* Output voltage when PWM is ON [0.0, 24.0] */
+        float       gate_off_voltage;  /* Output voltage when PWM is OFF [0.0, 24.0] */
+        bool        sync_enable;       /* Enable external synchronization */
+        float       phase_offset;      /* Phase offset in seconds */
+        float       dead_time_rising;  /* Dead time for rising edges in seconds */
+        float       dead_time_falling; /* Dead time for falling edges in seconds */
     } epwm_params_t;
 
     /**
@@ -84,10 +78,10 @@ extern "C"
         float dead_time_falling_norm; /* Normalized dead time falling */
 
         /* Pre-calculated compare values with dead time applied */
-        float cmpa_rising;  /* CMPA rising edge compare value */
-        float cmpa_falling; /* CMPA falling edge compare value */
-        float cmpb_rising;  /* CMPB rising edge compare value */
-        float cmpb_falling; /* CMPB falling edge compare value */
+        float cmpa_lead; /* CMPA leading edge compare value */
+        float cmpa_lag;  /* CMPA lagging edge compare value */
+        float cmpb_lead; /* CMPB leading edge compare value */
+        float cmpb_lag;  /* CMPB lagging edge compare value */
     } epwm_state_t;
 
     /**
@@ -105,10 +99,10 @@ extern "C"
         float                  counter_normalized; /* Current counter value [0.0, 1.0] */
         epwm_count_direction_t counter_direction;  /* Current counter direction */
         bool                   period_sync;        /* Clock output at start of PWM period */
-        float                  debug_1;            /* Debug variable 1 */
-        float                  debug_2;            /* Debug variable 2 */
-        float                  debug_3;            /* Debug variable 3 */
-        float                  debug_4;            /* Debug variable 4 */
+        float                  cmpa_lead_value;    /* CMPA leading edge compare value with dead time */
+        float                  cmpa_lag_value;     /* CMPA lagging edge compare value with dead time */
+        float                  cmpb_lead_value;    /* CMPB leading edge compare value with dead time */
+        float                  cmpb_lag_value;     /* CMPB lagging edge compare value with dead time */
     } epwm_outputs_t;
 
     /**

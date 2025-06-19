@@ -35,20 +35,21 @@ static inline void clear_state(epwm_state_t* const p_state)
     p_state->dead_time_falling_norm = 0.0F;
 
     /* Initialize compare values */
-    p_state->cmpa_rising  = 0.0F;
-    p_state->cmpa_falling = 0.0F;
-    p_state->cmpb_rising  = 0.0F;
-    p_state->cmpb_falling = 0.0F;
+    p_state->cmpa_lead = 0.0F;
+    p_state->cmpa_lag  = 0.0F;
+    p_state->cmpb_lead = 0.0F;
+    p_state->cmpb_lag  = 0.0F;
 }
 
 /**
  * @brief   Clear EPWM outputs to default values.
  * @param   p_outputs Pointer to outputs structure to clear.
+ * @param   gate_off_voltage Default off voltage for PWM outputs.
  */
-static inline void clear_outputs(epwm_outputs_t* const p_outputs)
+static inline void clear_outputs(epwm_outputs_t* const p_outputs, const float gate_off_voltage)
 {
-    p_outputs->PWMA               = 0.0F;
-    p_outputs->PWMB               = 0.0F;
+    p_outputs->PWMA               = gate_off_voltage;
+    p_outputs->PWMB               = gate_off_voltage;
     p_outputs->counter_normalized = 0.0F;
     p_outputs->counter_direction  = EPWM_COUNT_UP;
     p_outputs->period_sync        = false;
@@ -97,101 +98,90 @@ static void calculate_compare_values(epwm_t* const p_epwm, const float cmpa, con
 {
     /* Pre-calculate half dead time values to avoid repeated multiplication */
     float const half_rising_dt  = p_epwm->state.dead_time_rising_norm * 0.5F;
-    float const half_falling_dt = p_epwm->state.dead_time_falling_norm * 0.5F;
-
-    /* Calculate rising edge values (add half of rising dead time) */
-    float const cmpa_rising_raw = cmpa + half_rising_dt;
-    float const cmpb_rising_raw = cmpb + half_rising_dt;
+    float const half_falling_dt = p_epwm->state.dead_time_falling_norm * 0.5F; /* Calculate rising edge values (add half of rising dead time) */
+    float const cmpa_lead_raw   = cmpa + half_rising_dt;
+    float const cmpb_lead_raw   = cmpb + half_rising_dt;
 
     /* Calculate falling edge values (subtract half of falling dead time) */
-    float const cmpa_falling_raw = cmpa - half_falling_dt;
-    float const cmpb_falling_raw = cmpb - half_falling_dt;
+    float const cmpa_lag_raw = cmpa - half_falling_dt;
+    float const cmpb_lag_raw = cmpb - half_falling_dt;
 
     /* Clamp values to [0.0, 1.0] range - optimized clamping */
-    p_epwm->state.cmpa_rising  = (cmpa_rising_raw > 1.0F) ? 1.0F : ((cmpa_rising_raw < 0.0F) ? 0.0F : cmpa_rising_raw);
-    p_epwm->state.cmpb_rising  = (cmpb_rising_raw > 1.0F) ? 1.0F : ((cmpb_rising_raw < 0.0F) ? 0.0F : cmpb_rising_raw);
-    p_epwm->state.cmpa_falling = (cmpa_falling_raw > 1.0F) ? 1.0F : ((cmpa_falling_raw < 0.0F) ? 0.0F : cmpa_falling_raw);
-    p_epwm->state.cmpb_falling = (cmpb_falling_raw > 1.0F) ? 1.0F : ((cmpb_falling_raw < 0.0F) ? 0.0F : cmpb_falling_raw);
+    p_epwm->state.cmpa_lead = (cmpa_lead_raw > 1.0F) ? 1.0F : ((cmpa_lead_raw < 0.0F) ? 0.0F : cmpa_lead_raw);
+    p_epwm->state.cmpb_lead = (cmpb_lead_raw > 1.0F) ? 1.0F : ((cmpb_lead_raw < 0.0F) ? 0.0F : cmpb_lead_raw);
+    p_epwm->state.cmpa_lag  = (cmpa_lag_raw > 1.0F) ? 1.0F : ((cmpa_lag_raw < 0.0F) ? 0.0F : cmpa_lag_raw);
+    p_epwm->state.cmpb_lag  = (cmpb_lag_raw > 1.0F) ? 1.0F : ((cmpb_lag_raw < 0.0F) ? 0.0F : cmpb_lag_raw);
 }
 
 /**
- * @brief   Process PWM actions based on direct comparison logic.
+ * @brief   Process PWM actions using comparison logic with dead time.
  * @param   p_epwm  Pointer to EPWM module instance.
  * @param   cmpa    Compare A value.
  * @param   cmpb    Compare B value.
  */
 static void process_pwm_actions(epwm_t* const p_epwm, const float cmpa, const float cmpb)
-{
-    /* Use pre-calculated compare values from state */
-    float const cmpa_rising  = p_epwm->state.cmpa_rising;
-    float const cmpb_rising  = p_epwm->state.cmpb_rising;
-    float const cmpa_falling = p_epwm->state.cmpa_falling;
-    float const cmpb_falling = p_epwm->state.cmpb_falling;
+{ /* Use pre-calculated compare values from state */
+    float const cmpa_lead = p_epwm->state.cmpa_lead;
+    float const cmpb_lead = p_epwm->state.cmpb_lead;
+    float const cmpa_lag  = p_epwm->state.cmpa_lag;
+    float const cmpb_lag  = p_epwm->state.cmpb_lag;
 
-    p_epwm->outputs.debug_1 = cmpa_rising;                    /* Debug: store CMPA rising */
-    p_epwm->outputs.debug_2 = cmpa_falling;                   /* Debug: store CMPA falling */
-    p_epwm->outputs.debug_3 = cmpb_rising;                    /* Debug: store CMPB rising */
-    p_epwm->outputs.debug_4 = cmpb_falling;                   /* Debug: store
-                  
-                      /* Current counter value */
-    float const counter = p_epwm->outputs.counter_normalized; /* Process PWMA based on action mode */
-    switch (p_epwm->params.pwma_mode)
+    /* Current counter value and direction */
+    float const counter     = p_epwm->outputs.counter_normalized;
+    bool const  is_count_up = (p_epwm->outputs.counter_direction == EPWM_COUNT_UP);
+
+    /* Output compare values for monitoring and debugging */
+    p_epwm->outputs.cmpa_lead_value = cmpa_lead; /* Store CMPA leading edge value */
+    p_epwm->outputs.cmpa_lag_value  = cmpa_lag;  /* Store CMPA lagging edge value */
+    p_epwm->outputs.cmpb_lead_value = cmpb_lead; /* Store CMPB leading edge value */
+    p_epwm->outputs.cmpb_lag_value  = cmpb_lag;
+
+    /* Process PWM based on mode using comparison logic */
+    switch (p_epwm->params.pwm_mode)
     {
-    case EPWM_ACTION_CMPB_DOWN_CMPA_UP:
-        /* PWM rising edge on CMPB down-count, falling edge on CMPA up-count */
-        if (counter > cmpb_rising)
+    case EPWM_MODE_ACTIVE_HIGH_CMPA_FIRST:
+        /* Mode 1: PWMA ON when (counter_direction && counter > cmpa_lead) || (!counter_direction && counter > cmpb_lead)
+         *         PWMA uses lead values for both turn-on and turn-off */
+        if ((is_count_up && counter > cmpa_lead) || (!is_count_up && counter > cmpb_lead))
         {
             p_epwm->outputs.PWMA = p_epwm->params.gate_on_voltage;
         }
-        else if (counter < cmpa_falling)
+        else
         {
             p_epwm->outputs.PWMA = p_epwm->params.gate_off_voltage;
         }
-        /* Keep current state when between CMPA and CMPB */
+        // for deadtime it use lag
+        if ((!is_count_up && counter < cmpb_lag) || (is_count_up && counter < cmpa_lag))
+        {
+            p_epwm->outputs.PWMB = p_epwm->params.gate_on_voltage;
+        }
+        else
+        {
+            p_epwm->outputs.PWMB = p_epwm->params.gate_off_voltage;
+        }
         break;
-
-    case EPWM_ACTION_CMPA_DOWN_CMPB_UP:
-        /* PWM rising edge on CMPA down-count, falling edge on CMPB up-count */
-        if (counter > cmpa_rising)
+    case EPWM_MODE_ACTIVE_HIGH_CMPA_SECOND:
+        /* Mode 2: PWMA ON when (!counter_direction && counter < cmpa_lag) || (counter_direction && counter < cmpb_lag)
+         *         Down-count: PWMA ON when counter below CMPA lag threshold
+         *         Up-count: PWMA ON when counter below CMPB lag threshold
+         *         PWMB is complementary to PWMA for dead-time operation */
+        if ((!is_count_up && counter < cmpa_lag) || (is_count_up && counter < cmpb_lag))
         {
             p_epwm->outputs.PWMA = p_epwm->params.gate_on_voltage;
         }
-        else if (counter < cmpb_falling)
+        else
         {
             p_epwm->outputs.PWMA = p_epwm->params.gate_off_voltage;
         }
-        /* Keep current state when between CMPB and CMPA */
-        break;
-
-    default:
-        break;
-    } /* Process PWMB based on action mode */
-    switch (p_epwm->params.pwmb_mode)
-    {
-    case EPWM_ACTION_CMPB_DOWN_CMPA_UP:
-        /* PWM rising edge on CMPB down-count, falling edge on CMPA up-count */
-        if (counter > cmpb_rising)
+        // for deadtime it use lead
+        if ((is_count_up && counter > cmpb_lead) || (!is_count_up && counter > cmpa_lead))
         {
             p_epwm->outputs.PWMB = p_epwm->params.gate_on_voltage;
         }
-        else if (counter < cmpa_falling)
+        else
         {
             p_epwm->outputs.PWMB = p_epwm->params.gate_off_voltage;
         }
-        /* Keep current state when between CMPA and CMPB */
-        break;
-
-    case EPWM_ACTION_CMPA_DOWN_CMPB_UP:
-        /* PWM rising edge on CMPA down-count, falling edge on CMPB up-count */
-        if (counter > cmpa_rising)
-        {
-            p_epwm->outputs.PWMB = p_epwm->params.gate_on_voltage;
-        }
-        else if (counter < cmpb_falling)
-        {
-            p_epwm->outputs.PWMB = p_epwm->params.gate_off_voltage;
-        }
-        /* Keep current state when between CMPB and CMPA */
         break;
 
     default:
@@ -212,11 +202,9 @@ void epwm_init(epwm_t* const p_epwm, const epwm_params_t* const p_params)
     assert(p_params->Ts > 0.0F);
     assert(p_params->dead_time_rising >= 0.0F);
     assert(p_params->dead_time_falling >= 0.0F);
-
     p_epwm->params.Ts                = p_params->Ts;
     p_epwm->params.inv_Ts            = 1.0F / p_epwm->params.Ts;
-    p_epwm->params.pwma_mode         = p_params->pwma_mode;
-    p_epwm->params.pwmb_mode         = p_params->pwmb_mode;
+    p_epwm->params.pwm_mode          = p_params->pwm_mode;
     p_epwm->params.gate_on_voltage   = p_params->gate_on_voltage;
     p_epwm->params.gate_off_voltage  = p_params->gate_off_voltage;
     p_epwm->params.sync_enable       = p_params->sync_enable;
@@ -238,9 +226,8 @@ void epwm_reset(epwm_t* const p_epwm)
     /* Store dead time values before clearing */
     float const dead_time_rising_norm  = p_epwm->state.dead_time_rising_norm;
     float const dead_time_falling_norm = p_epwm->state.dead_time_falling_norm;
-
     clear_state(&p_epwm->state);
-    clear_outputs(&p_epwm->outputs);
+    clear_outputs(&p_epwm->outputs, p_epwm->params.gate_off_voltage);
 
     /* Restore dead time values */
     p_epwm->state.dead_time_rising_norm  = dead_time_rising_norm;
