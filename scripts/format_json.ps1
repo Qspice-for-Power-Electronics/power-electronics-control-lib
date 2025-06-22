@@ -1,9 +1,9 @@
 # *************************** In The Name Of God ***************************
 # * @file    format_json.ps1
-# * @brief   PowerShell script to format JSON files consistently
+# * @brief   PowerShell script to format JSON and JSONC files consistently
 # * @author  Dr.-Ing. Hossein Abedini
 # * @date    2025-06-22
-# * Formats all JSON files in the project with consistent 2-space indentation
+# * Formats all JSON and JSONC files in the project with consistent tab indentation
 # * @note    Designed for real-time signal processing applications.
 # * @license This work is dedicated to the public domain under CC0 1.0.
 # *          Please use it for good and beneficial purposes!
@@ -13,15 +13,15 @@
 # Power Electronics Control Library - JSON Formatter
 # ================================================================================
 # 
-# This script formats all JSON files in the project with consistent indentation
-# and validates JSON syntax to ensure configuration files are properly formatted.
+# This script formats all JSON and JSONC files in the project with consistent indentation
+# and preserves comments while ensuring proper formatting structure.
 #
 # WHAT THIS SCRIPT DOES:
-# 1. Scans for JSON files in config/ and .vscode/ directories
-# 2. Validates JSON syntax and reports errors
-# 3. Formats JSON with consistent 2-space indentation
-# 4. Preserves all data while improving readability
-# 5. Creates clean, professional JSON formatting
+# 1. Scans for JSON/JSONC files in config/ and .vscode/ directories
+# 2. Preserves comments and structure in JSONC files
+# 3. Formats with consistent tab indentation (replacing 4-space groups)
+# 4. Maintains all data while improving readability
+# 5. Creates clean, professional JSON/JSONC formatting
 #
 # ================================================================================
 
@@ -40,14 +40,14 @@ Write-Host "====================================================================
 if ($DryRun) {
     Write-Host "DRY RUN MODE - Preview changes only" -ForegroundColor Yellow
 } else {
-    Write-Host "Formatting JSON files with consistent indentation" -ForegroundColor Green
+    Write-Host "Formatting JSON and JSONC files with consistent tab indentation" -ForegroundColor Green
 }
 Write-Host ""
 
-# Define JSON file locations to process
+# Define JSON/JSONC file locations to process
 $JsonLocations = @(
     "config/*.json",
-    ".vscode/*.json"
+    ".vscode/*.json"  # JSONC files with comments - now supported
 )
 
 $FilesProcessed = 0
@@ -65,26 +65,49 @@ foreach ($location in $JsonLocations) {
             Write-Host "Processing: $($file.FullName)" -ForegroundColor Gray
         } else {
             Write-Host "[$FilesProcessed] Formatting $($file.Name)..." -ForegroundColor Green
-        }
-        
-        try {
-            # Load and validate JSON
-            $jsonContent = Get-Content $file.FullName -Raw
-            $jsonObject = $jsonContent | ConvertFrom-Json
+        }          try {
+            # Read file content line by line for robust formatting
+            $lines = Get-Content $file.FullName
+            $formattedLines = @()
+            $needsFormatting = $false
+            $indentLevel = 0
             
-            # Format with consistent indentation
-            $formattedJson = $jsonObject | ConvertTo-Json -Depth 10
-            $formattedJson = $formattedJson -replace '    ', '  '  # Convert 4-space to 2-space
-            
-            # Compare with original to see if changes are needed
-            $originalFormatted = $jsonContent | ConvertFrom-Json | ConvertTo-Json -Depth 10
-            $originalFormatted = $originalFormatted -replace '    ', '  '
-            
-            if ($formattedJson -ne $originalFormatted) {
+            foreach ($line in $lines) {
+                $trimmedLine = $line.Trim()
+                
+                # Skip empty lines and comment lines - preserve as-is
+                if ($trimmedLine -eq "" -or $trimmedLine.StartsWith("//") -or $trimmedLine.StartsWith("/*") -or $trimmedLine.StartsWith("*")) {
+                    $formattedLines += $line
+                    continue
+                }
+                
+                # Determine indentation level based on JSON structure
+                # Decrease indent level for closing braces/brackets
+                if ($trimmedLine -match '^[\}\]]') {
+                    $indentLevel = [Math]::Max(0, $indentLevel - 1)
+                }
+                
+                # Create properly formatted line with tabs
+                $newLine = "`t" * $indentLevel + $trimmedLine
+                
+                # Check if formatting is needed
+                if ($line -ne $newLine) {
+                    $needsFormatting = $true
+                }
+                
+                $formattedLines += $newLine
+                
+                # Increase indent level for opening braces/brackets (but not if line also closes)
+                if ($trimmedLine -match '[\{\[]$' -and -not ($trimmedLine -match '^[\}\]].*[\{\[]$')) {
+                    $indentLevel++
+                }
+            }
+              if ($needsFormatting) {
                 if ($DryRun) {
                     Write-Host "  Would format: $($file.Name)" -ForegroundColor Yellow
+                    $FilesFormatted++
                 } else {
-                    $formattedJson | Set-Content $file.FullName -Encoding UTF8
+                    $formattedLines | Set-Content $file.FullName -Encoding UTF8
                     Write-Host "  Formatted: $($file.Name)" -ForegroundColor Green
                     $FilesFormatted++
                 }

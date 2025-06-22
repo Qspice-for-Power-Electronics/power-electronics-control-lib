@@ -1,4 +1,4 @@
-// *************************** In The Name Of God ***************************
+﻿// *************************** In The Name Of God ***************************
 // * @file    c_cpp_properties.json
 // * @brief   VS Code C++ IntelliSense configuration for Digital Mars Compiler
 // * @author  Dr.-Ing. Hossein Abedini
@@ -11,38 +11,38 @@
 // ***************************************************************************
 
 {
-    "configurations": [
-        {
-            "name": "Digital Mars C++ (DMC)",  
-              "includePath": [
-                "${workspaceFolder}/**",
-                "${workspaceFolder}/compiler/include/**",
-                "${workspaceFolder}/compiler/stlport/stlport/**"
-            ],
-               "defines": [
-                "_DEBUG",
-                "UNICODE",
-                "_UNICODE",
-                "WIN32",
-                "_WIN32",
-                "__DMC__",
-                "__STDC__",
-                "DMC_BOOL_COMPAT"
-            ],
-            "windowsSdkVersion": "10.0.19041.0",
-            "compilerPath": "${workspaceFolder}/compiler/bin/dmc.exe",
-            "cStandard": "c11",
-            "cppStandard": "c++11",
-            "intelliSenseMode": "windows-gcc-x86",         
-               "browse": {
-                "path": [
-                    "${workspaceFolder}/**",
-                    "${workspaceFolder}/compiler/include/**",
-                    "${workspaceFolder}/compiler/stlport/stlport/**"
-                ],
-                "limitSymbolsToIncludedHeaders": false
-            }
-        }
-    ],
-    "version": 4
+	"configurations": [
+		{
+			"name": "Digital Mars C++ (DMC)",
+			"includePath": [
+				"${workspaceFolder}/**",
+				"${workspaceFolder}/compiler/include/**",
+				"${workspaceFolder}/compiler/stlport/stlport/**"
+			],
+			"defines": [
+				"_DEBUG",
+				"UNICODE",
+				"_UNICODE",
+				"WIN32",
+				"_WIN32",
+				"__DMC__",
+				"__STDC__",
+				"DMC_BOOL_COMPAT"
+			],
+			"windowsSdkVersion": "10.0.19041.0",
+			"compilerPath": "${workspaceFolder}/compiler/bin/dmc.exe",
+			"cStandard": "c11",
+			"cppStandard": "c++11",
+			"intelliSenseMode": "windows-gcc-x86",
+			"browse": {
+				"path": [
+					"${workspaceFolder}/**",
+					"${workspaceFolder}/compiler/include/**",
+					"${workspaceFolder}/compiler/stlport/stlport/**"
+				],
+				"limitSymbolsToIncludedHeaders": false
+			}
+		}
+	],
+	"version": 4
 }

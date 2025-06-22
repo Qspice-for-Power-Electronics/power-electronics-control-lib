@@ -17,17 +17,17 @@
     // the C++ power electronics control library for QSPICE integration.
     //
     // HOW TO RUN TASKS:
-    // Method 1: Press Ctrl+Shift+P → "Tasks: Run Task" → Select task
-    // Method 2: Terminal menu → "Run Task..." → Select task  
+    // Method 1: Press Ctrl+Shift+P â†’ "Tasks: Run Task" â†’ Select task
+    // Method 2: Terminal menu â†’ "Run Task..." â†’ Select task  
     // Method 3: Use keyboard shortcuts if configured    //
     // AVAILABLE TASKS:
     // 1. "Setup Compiler" - Downloads and installs Digital Mars Compiler if not present
     // 2. "Clean Build Artifacts" - Removes all build outputs and temporary files
     // 3. "Code Cleanup" - Runs automated code formatting and const correctness checks
     // 4. "Build All Modules" - Builds all power electronics and QSPICE modules
-      "version": "2.0.0",
-    "tasks": [
-        {
+	"version": "2.0.0",
+	"tasks": [
+		{
             // TASK 1: Setup Compiler
             // Purpose: Downloads and installs Digital Mars Compiler if not present
             // Usage: Run this first on a fresh clone to setup the build environment
@@ -38,23 +38,23 @@
             //   - Handles extraction and proper directory structure
             // Requirements: Internet connection, PowerShell 5.0+
             // Source: Downloads from official DigitalMars repositories
-            "label": "Setup Compiler",
-            "type": "shell",
-            "command": "powershell.exe",
-            "args": [
-                "-ExecutionPolicy", "Bypass",
-                "-File", "${workspaceFolder}/scripts/setup_compiler.ps1"
-            ],
-            "group": "build",
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": true,
-                "panel": "shared",
-                "clear": true
-            },
-            "detail": "Download and install Digital Mars Compiler if not present"        },
-        {
+			"label": "Setup Compiler",
+			"type": "shell",
+			"command": "powershell.exe",
+			"args": [
+				"-ExecutionPolicy", "Bypass",
+				"-File", "${workspaceFolder}/scripts/setup_compiler.ps1"
+			],
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": true,
+				"panel": "shared",
+				"clear": true
+			},
+			"detail": "Download and install Digital Mars Compiler if not present"        },
+			{
             // TASK 2: Clean Build Artifacts
             // Purpose: Removes all build outputs and temporary files to ensure clean builds
             // Usage: Run before building to clean previous outputs
@@ -65,22 +65,22 @@
             //   - *.obj files (object files)  
             //   - *.bak files (backup files)
             // Command: Uses Windows cmd for reliable file operations
-            "label": "Clean Build Artifacts",
-            "type": "shell", 
-            "command": "cmd",
-            "args": [
-                "/c",
-                "if exist build rmdir /s /q build && del /f /q *.dll *.map *.obj *.bak 2>nul && echo Build artifacts cleaned"
-            ],
-            "group": "build",
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            },
-            "detail": "Clean all build artifacts and output files"        },
-        {            
+				"label": "Clean Build Artifacts",
+				"type": "shell",
+				"command": "cmd",
+				"args": [
+					"/c",
+					"if exist build rmdir /s /q build && del /f /q *.dll *.map *.obj *.bak 2>nul && echo Build artifacts cleaned"
+				],
+				"group": "build",
+				"presentation": {
+					"echo": true,
+					"reveal": "always",
+					"focus": false,
+					"panel": "shared"
+				},
+				"detail": "Clean all build artifacts and output files"        },
+				{
             // TASK 3: Code Cleanup
             // Purpose: Runs comprehensive code quality improvements
             // Features:
@@ -92,69 +92,42 @@
             // Usage: Run periodically to maintain code quality
             // Requirements: Clang-tidy must be installed and in PATH
             // Note: Runs in dry-run mode by default (preview changes only)
-            "label": "Code Cleanup",
-            "type": "shell",
-            "command": "${workspaceFolder}/scripts/cleanup_code.bat",
-            "group": "build",
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            },
-            "detail": "Run comprehensive code cleanup including const correctness and formatting"        },
-        {
+					"label": "Code Cleanup",
+					"type": "shell",
+					"command": "${workspaceFolder}/scripts/cleanup_code.bat",
+					"group": "build",
+					"presentation": {
+						"echo": true,
+						"reveal": "always",
+						"focus": false,
+						"panel": "shared"
+					},
+					"detail": "Run comprehensive code cleanup including const correctness and formatting"        },
+					{
             // TASK 4: Build All Modules
             // Purpose: Compiles all power electronics and QSPICE modules using Digital Mars Compiler
             // Usage: This is the default build task (Ctrl+Shift+B)
             // Output: Creates .dll files in build/ directory for QSPICE integration
             // Requirements: Digital Mars Compiler (DMC) must be in PATH
-            "label": "Build All Modules",
-            "type": "shell",
-            "command": "${workspaceFolder}/scripts/build_all.bat",
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            },
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared",
-                "showReuseMessage": true,
-                "clear": false
-            },
-            "problemMatcher": [
-                "$gcc"
-            ],
-            "detail": "Build all power electronics and QSPICE modules using Digital Mars Compiler"
-        },
-        {
-            // TASK 5: Format JSON Files
-            // Purpose: Format all JSON configuration files with consistent indentation
-            // Features:
-            //   - Formats JSON files in config/ and .vscode/ directories
-            //   - Validates JSON syntax and reports errors
-            //   - Applies consistent 2-space indentation
-            //   - Preserves all data while improving readability
-            //   - Dry-run mode available for preview
-            // Usage: Run when JSON files need formatting cleanup
-            // Requirements: PowerShell 5.0+
-            "label": "Format JSON Files",
-            "type": "shell",
-            "command": "powershell.exe",
-            "args": [
-                "-ExecutionPolicy", "Bypass",
-                "-File", "${workspaceFolder}/scripts/format_json.ps1"
-            ],
-            "group": "build",
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            },
-            "detail": "Format all JSON configuration files with consistent 2-space indentation"
-        }
-    ]
-}
+						"label": "Build All Modules",
+						"type": "shell",
+						"command": "${workspaceFolder}/scripts/build_all.bat",
+						"group": {
+							"kind": "build",
+							"isDefault": true
+						},
+						"presentation": {
+							"echo": true,
+							"reveal": "always",
+							"focus": false,
+							"panel": "shared",
+							"showReuseMessage": true,
+							"clear": false
+						},
+						"problemMatcher": [
+							"$gcc"
+						],
+						"detail": "Build all power electronics and QSPICE modules using Digital Mars Compiler"
+					}
+				]
+			}
