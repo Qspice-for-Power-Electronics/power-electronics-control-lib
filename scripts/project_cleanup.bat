@@ -1,22 +1,22 @@
 @echo off
 REM *************************** In The Name Of God ***************************
-REM * @file    cleanup_code.bat
-REM * @brief   Batch script for comprehensive code cleanup and quality improvements
+REM * @file    project_cleanup.bat
+REM * @brief   Batch script for comprehensive project cleanup and quality improvements
 REM * @author  Dr.-Ing. Hossein Abedini
 REM * @date    2025-06-08
-REM * Performs comprehensive code cleanup on all C++ source files including
-REM * const correctness, formatting, include cleanup, and quality improvements.
+REM * Performs comprehensive project cleanup on all C++ source files including
+REM * build artifact cleanup, const correctness, formatting, include cleanup, and quality improvements.
 REM * @note    Designed for real-time signal processing applications.
 REM * @license This work is dedicated to the public domain under CC0 1.0.
 REM *          Please use it for good and beneficial purposes!
 REM ***************************************************************************
 
 REM ================================================================================
-REM Power Electronics Control Library - Code Cleanup Script
+REM Power Electronics Control Library - Project Cleanup Script
 REM ================================================================================
 REM 
-REM This script performs comprehensive code cleanup and quality improvements on all
-REM C++ source files in the project, including const correctness, formatting,
+REM This script performs comprehensive project cleanup and quality improvements on all
+REM C++ source files in the project, including build artifact cleanup, const correctness, formatting,
 REM include cleanup, and various code quality warnings.
 REM
 REM WHAT THIS SCRIPT DOES:
@@ -32,6 +32,7 @@ REM 9. Fixes modernization issues (C++11 improvements)
 REM 10. Corrects performance issues (move semantics, etc.)
 REM 11. Addresses readability and maintainability concerns
 REM 12. Reports remaining warnings that require manual attention
+REM 13. Cleans all build artifacts and temporary files
 REM
 REM REQUIREMENTS:
 REM - LLVM/Clang tools (clang-format, clang-tidy) in PATH
@@ -45,8 +46,8 @@ REM - Modified source files with automatic fixes applied
 REM - Detailed report of changes made and remaining issues
 REM
 REM USAGE:
-REM   .\scripts\cleanup_code.bat
-REM   .\scripts\cleanup_code.bat --dry-run    (preview changes only)
+REM   .\scripts\project_cleanup.bat
+REM   .\scripts\project_cleanup.bat --dry-run    (preview changes only)
 REM
 REM ================================================================================
 
@@ -261,7 +262,7 @@ echo Phase 2 completed - Code formatting applied
 echo.
 
 REM ================================================================================
-REM STEP 6.5: Phase 2.5 - JSON File Formatting
+REM STEP 7: Phase 2.5 - JSON File Formatting
 REM ================================================================================
 
 echo ================================================================================
@@ -271,55 +272,26 @@ echo ===========================================================================
 REM Apply consistent formatting to all JSON files in the project
 echo Formatting JSON configuration files...
 
-REM Find and format all JSON files in config directory and other relevant locations
-set JSON_FILES_FORMATTED=0
-for /r "config" %%f in (*.json) do (
-    set /a JSON_FILES_FORMATTED+=1
-    echo [!JSON_FILES_FORMATTED!] Formatting JSON file %%~nxf...
-    
-    if "!DRY_RUN!"=="false" (
-        REM Use PowerShell to format JSON with 2-space indentation
-        powershell.exe -ExecutionPolicy Bypass -Command "$config = Get-Content '%%f' | ConvertFrom-Json; $config | ConvertTo-Json -Depth 10 | ForEach-Object { $_ -replace '    ', '  ' } | Set-Content '%%f'"
-        if errorlevel 1 (
-            echo Warning: Error formatting JSON file %%f
-            set /a ERROR_COUNT+=1
-        )
-    ) else (
-        REM In dry-run mode, just validate JSON syntax
-        powershell.exe -ExecutionPolicy Bypass -Command "try { Get-Content '%%f' | ConvertFrom-Json | Out-Null; Write-Host 'Valid JSON: %%f' } catch { Write-Host 'Invalid JSON: %%f' -ForegroundColor Red }" >nul 2>&1
-        if errorlevel 1 (
-            echo Would format (or fix): %%f
-        )
-    )
-)
-
-REM Also check for JSON files in .vscode directory
-for %%f in (.vscode\*.json) do (
-    if exist "%%f" (
-        set /a JSON_FILES_FORMATTED+=1
-        echo [!JSON_FILES_FORMATTED!] Formatting VS Code config %%~nxf...
-        
-        if "!DRY_RUN!"=="false" (
-            powershell.exe -ExecutionPolicy Bypass -Command "$config = Get-Content '%%f' | ConvertFrom-Json; $config | ConvertTo-Json -Depth 10 | ForEach-Object { $_ -replace '    ', '  ' } | Set-Content '%%f'"
-            if errorlevel 1 (
-                echo Warning: Error formatting JSON file %%f
-                set /a ERROR_COUNT+=1
-            )
-        )
-    )
-)
-
-if !JSON_FILES_FORMATTED! equ 0 (
-    echo No JSON files found to format
+if "!DRY_RUN!"=="true" (
+    echo Running JSON formatting in preview mode...
+    powershell.exe -ExecutionPolicy Bypass -File "scripts\format_json.ps1" -DryRun
 ) else (
-    echo Formatted !JSON_FILES_FORMATTED! JSON files
+    echo Applying JSON formatting...
+    powershell.exe -ExecutionPolicy Bypass -File "scripts\format_json.ps1"
+)
+
+if errorlevel 1 (
+    echo Warning: Issues found during JSON formatting
+    set /a ERROR_COUNT+=1
+) else (
+    echo JSON formatting completed successfully
 )
 
 echo Phase 2.5 completed - JSON formatting applied
 echo.
 
 REM ================================================================================
-REM STEP 7: Phase 3 - Include Cleanup
+REM STEP 8: Phase 3 - Include Cleanup
 REM ================================================================================
 
 echo ================================================================================
@@ -352,7 +324,7 @@ echo Phase 3 completed - Include cleanup applied
 echo.
 
 REM ================================================================================
-REM STEP 8: Phase 4 - Update Module Dependencies
+REM STEP 9: Phase 4 - Update Module Dependencies
 REM ================================================================================
 
 echo ================================================================================
@@ -381,7 +353,7 @@ echo Phase 4 completed - Dependencies updated
 echo.
 
 REM ================================================================================
-REM STEP 9: Phase 5 - Advanced Analysis
+REM STEP 10: Phase 5 - Advanced Analysis
 REM ================================================================================
 
 echo ================================================================================
@@ -414,7 +386,7 @@ echo Phase 5 completed - Advanced cleanup applied
 echo.
 
 REM ================================================================================
-REM STEP 10: Phase 6 - Final Quality Report
+REM STEP 11: Phase 6 - Final Quality Report
 REM ================================================================================
 
 echo ================================================================================
@@ -442,7 +414,7 @@ for /r "modules" %%f in (*.cpp *.h) do (
 )
 
 REM ================================================================================
-REM STEP 11: Summary and Results
+REM STEP 12: Summary and Results
 REM ================================================================================
 
 echo.
@@ -452,7 +424,7 @@ echo ===========================================================================
 
 if "!DRY_RUN!"=="true" (
     echo DRY-RUN MODE - No files were actually modified
-    echo To apply changes, run: .\scripts\cleanup_code.bat
+    echo To apply changes, run: .\scripts\project_cleanup.bat
 ) else (
     echo Files processed: !FILES_PROCESSED!
 )
@@ -473,9 +445,32 @@ if "!DRY_RUN!"=="false" (
     echo.
     echo NEXT STEPS:
     echo 1. Review changed files: git diff
-    echo 2. Test build: .\build_all.bat
-    echo 3. Commit changes: git add . ^&^& git commit -m "Apply automatic code cleanup"
+    echo 2. Test build: .\build_all.bat    echo 3. Commit changes: git add . ^&^& git commit -m "Apply automatic code cleanup"
 )
+
+REM ================================================================================
+REM STEP 13: Clean Build Artifacts
+REM ================================================================================
+
+echo.
+echo ================================================================================
+echo STEP 13: Cleaning build artifacts...
+echo ================================================================================
+
+REM Remove all build artifacts and temporary files after processing is complete
+echo Cleaning all build artifacts and temporary files...
+if exist build (
+    rmdir /s /q build
+    echo Removed build directory
+)
+
+REM Delete DLLs, map files, object files, and backup files from root directory
+del /f /q *.dll *.map *.obj *.bak 2>nul
+if errorlevel 0 (
+    echo Removed build artifacts from root directory
+)
+
+echo Build artifacts cleaned successfully
 
 REM Exit with error count (0 = success, >0 = issues found)
 exit /b !ERROR_COUNT!
