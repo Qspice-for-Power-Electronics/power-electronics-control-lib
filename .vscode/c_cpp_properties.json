@@ -14,16 +14,11 @@
     "configurations": [
         {
             "name": "Digital Mars C++ (DMC)",  
-                          "includePath": [
+              "includePath": [
                 "${workspaceFolder}/**",
-                "${workspaceFolder}/modules/power_electronics/common",
-                "${workspaceFolder}/modules/power_electronics/filters/iir",
-                "${workspaceFolder}/modules/power_electronics/pwm/bpwm",
-                "${workspaceFolder}/modules/power_electronics/pwm/epwm",
-                "${workspaceFolder}/modules/qspice_modules/ctrl",
                 "${workspaceFolder}/compiler/include/**",
                 "${workspaceFolder}/compiler/stlport/stlport/**"
-            ],         
+            ],
                "defines": [
                 "_DEBUG",
                 "UNICODE",
@@ -38,13 +33,12 @@
             "compilerPath": "${workspaceFolder}/compiler/bin/dmc.exe",
             "cStandard": "c11",
             "cppStandard": "c++11",
-            "intelliSenseMode": "windows-gcc-x86",
-            "browse": {                "path": [
-                    "${workspaceFolder}",
-                    "${workspaceFolder}/modules",
-                    "${workspaceFolder}/modules/power_electronics/common",
-                    "${workspaceFolder}/compiler/include",
-                    "${workspaceFolder}/compiler/stlport/stlport"
+            "intelliSenseMode": "windows-gcc-x86",         
+               "browse": {
+                "path": [
+                    "${workspaceFolder}/**",
+                    "${workspaceFolder}/compiler/include/**",
+                    "${workspaceFolder}/compiler/stlport/stlport/**"
                 ],
                 "limitSymbolsToIncludedHeaders": false
             }

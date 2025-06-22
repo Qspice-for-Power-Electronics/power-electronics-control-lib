@@ -25,11 +25,13 @@ REM 2. Ensures project is built (needed for static analysis)
 REM 3. Applies const correctness fixes (adds const where appropriate)
 REM 4. Adds parentheses around #define values for safer macro definitions
 REM 5. Formats all source code using clang-format
-REM 6. Removes unnecessary #include statements
-REM 7. Fixes modernization issues (C++11 improvements)
-REM 8. Corrects performance issues (move semantics, etc.)
-REM 9. Addresses readability and maintainability concerns
-REM 10. Reports remaining warnings that require manual attention
+REM 6. Formats JSON configuration files for consistency
+REM 7. Removes unnecessary #include statements
+REM 8. Updates module dependencies automatically by scanning #include statements
+REM 9. Fixes modernization issues (C++11 improvements)
+REM 10. Corrects performance issues (move semantics, etc.)
+REM 11. Addresses readability and maintainability concerns
+REM 12. Reports remaining warnings that require manual attention
 REM
 REM REQUIREMENTS:
 REM - LLVM/Clang tools (clang-format, clang-tidy) in PATH
@@ -259,14 +261,134 @@ echo Phase 2 completed - Code formatting applied
 echo.
 
 REM ================================================================================
-REM STEP 7: Phase 3 - Include Cleanup and Advanced Analysis
+REM STEP 6.5: Phase 2.5 - JSON File Formatting
 REM ================================================================================
 
 echo ================================================================================
-echo PHASE 3: Cleaning includes and advanced analysis...
+echo PHASE 2.5: Formatting JSON configuration files...
 echo ================================================================================
 
-REM Define advanced cleanup checks (performance, readability, but excluding aggressive include cleaner)
+REM Apply consistent formatting to all JSON files in the project
+echo Formatting JSON configuration files...
+
+REM Find and format all JSON files in config directory and other relevant locations
+set JSON_FILES_FORMATTED=0
+for /r "config" %%f in (*.json) do (
+    set /a JSON_FILES_FORMATTED+=1
+    echo [!JSON_FILES_FORMATTED!] Formatting JSON file %%~nxf...
+    
+    if "!DRY_RUN!"=="false" (
+        REM Use PowerShell to format JSON with 2-space indentation
+        powershell.exe -ExecutionPolicy Bypass -Command "$config = Get-Content '%%f' | ConvertFrom-Json; $config | ConvertTo-Json -Depth 10 | ForEach-Object { $_ -replace '    ', '  ' } | Set-Content '%%f'"
+        if errorlevel 1 (
+            echo Warning: Error formatting JSON file %%f
+            set /a ERROR_COUNT+=1
+        )
+    ) else (
+        REM In dry-run mode, just validate JSON syntax
+        powershell.exe -ExecutionPolicy Bypass -Command "try { Get-Content '%%f' | ConvertFrom-Json | Out-Null; Write-Host 'Valid JSON: %%f' } catch { Write-Host 'Invalid JSON: %%f' -ForegroundColor Red }" >nul 2>&1
+        if errorlevel 1 (
+            echo Would format (or fix): %%f
+        )
+    )
+)
+
+REM Also check for JSON files in .vscode directory
+for %%f in (.vscode\*.json) do (
+    if exist "%%f" (
+        set /a JSON_FILES_FORMATTED+=1
+        echo [!JSON_FILES_FORMATTED!] Formatting VS Code config %%~nxf...
+        
+        if "!DRY_RUN!"=="false" (
+            powershell.exe -ExecutionPolicy Bypass -Command "$config = Get-Content '%%f' | ConvertFrom-Json; $config | ConvertTo-Json -Depth 10 | ForEach-Object { $_ -replace '    ', '  ' } | Set-Content '%%f'"
+            if errorlevel 1 (
+                echo Warning: Error formatting JSON file %%f
+                set /a ERROR_COUNT+=1
+            )
+        )
+    )
+)
+
+if !JSON_FILES_FORMATTED! equ 0 (
+    echo No JSON files found to format
+) else (
+    echo Formatted !JSON_FILES_FORMATTED! JSON files
+)
+
+echo Phase 2.5 completed - JSON formatting applied
+echo.
+
+REM ================================================================================
+REM STEP 7: Phase 3 - Include Cleanup
+REM ================================================================================
+
+echo ================================================================================
+echo PHASE 3: Cleaning unnecessary includes...
+echo ================================================================================
+
+REM Define include cleanup checks to remove unnecessary headers
+set INCLUDE_CLEANUP_CHECKS=misc-include-cleaner,readability-redundant-preprocessor
+
+REM Process files for include cleanup
+set FILES_INCLUDE_CLEANED=0
+for /r "modules" %%f in (*.cpp *.h) do (
+    set /a FILES_INCLUDE_CLEANED+=1
+    echo [!FILES_INCLUDE_CLEANED!/!SOURCE_FILE_COUNT!] Cleaning includes in %%~nxf...
+    
+    REM Force C++ mode for all files to avoid language detection issues
+    REM Use -x c++ to explicitly tell clang-tidy to treat the file as C++
+    set LANG_FLAGS=-x c++ -std=c++11
+    if /i "%%~xf"==".c" set LANG_FLAGS=-x c -std=c99
+    
+    REM Apply include cleanup with proper include paths and explicit language mode
+    clang-tidy !TIDY_FLAGS! --checks="!INCLUDE_CLEANUP_CHECKS!" "%%f" -- !LANG_FLAGS! !CLANG_INCLUDE_PATHS!
+    if errorlevel 1 (
+        echo Warning: Include cleanup issues found in %%f
+        set /a ERROR_COUNT+=1
+    )
+)
+
+echo Phase 3 completed - Include cleanup applied
+echo.
+
+REM ================================================================================
+REM STEP 8: Phase 4 - Update Module Dependencies
+REM ================================================================================
+
+echo ================================================================================
+echo PHASE 4: Updating module dependencies automatically...
+echo ================================================================================
+
+REM Scan #include statements and update dependencies in project_config.json
+REM This ensures build order is correct based on actual code dependencies
+REM Run AFTER include cleanup to get accurate dependency information
+echo Scanning source files for #include dependencies...
+
+if "!DRY_RUN!"=="true" (
+    echo Running dependency update in preview mode...
+    powershell.exe -ExecutionPolicy Bypass -File "scripts\update_dependencies.ps1" -DryRun
+) else (
+    echo Updating module dependencies...
+    powershell.exe -ExecutionPolicy Bypass -File "scripts\update_dependencies.ps1"
+)
+
+if errorlevel 1 (
+    echo Warning: Issues found during dependency update
+    set /a ERROR_COUNT+=1
+)
+
+echo Phase 4 completed - Dependencies updated
+echo.
+
+REM ================================================================================
+REM STEP 9: Phase 5 - Advanced Analysis
+REM ================================================================================
+
+echo ================================================================================
+echo PHASE 5: Advanced analysis and improvements...
+echo ================================================================================
+
+REM Define advanced cleanup checks (performance, readability, modernization)
 set ADVANCED_CHECKS=performance-*,readability-redundant-*,modernize-redundant-*,bugprone-*
 
 REM Process files for advanced cleanup
@@ -288,15 +410,15 @@ for /r "modules" %%f in (*.cpp *.h) do (
     )
 )
 
-echo Phase 3 completed - Advanced cleanup applied
+echo Phase 5 completed - Advanced cleanup applied
 echo.
 
 REM ================================================================================
-REM STEP 8: Phase 4 - Final Quality Report
+REM STEP 10: Phase 6 - Final Quality Report
 REM ================================================================================
 
 echo ================================================================================
-echo PHASE 4: Generating quality report...
+echo PHASE 6: Generating quality report...
 echo ================================================================================
 
 REM Run comprehensive analysis for remaining issues (report only)
@@ -320,7 +442,7 @@ for /r "modules" %%f in (*.cpp *.h) do (
 )
 
 REM ================================================================================
-REM STEP 9: Summary and Results
+REM STEP 11: Summary and Results
 REM ================================================================================
 
 echo.

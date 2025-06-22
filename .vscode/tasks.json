@@ -80,7 +80,8 @@
                 "panel": "shared"
             },
             "detail": "Clean all build artifacts and output files"        },
-        {            // TASK 3: Code Cleanup
+        {            
+            // TASK 3: Code Cleanup
             // Purpose: Runs comprehensive code quality improvements
             // Features:
             //   - Clang-tidy analysis for const correctness
@@ -126,6 +127,34 @@
             "problemMatcher": [
                 "$gcc"
             ],
-            "detail": "Build all power electronics and QSPICE modules using Digital Mars Compiler"        }
+            "detail": "Build all power electronics and QSPICE modules using Digital Mars Compiler"
+        },
+        {
+            // TASK 5: Format JSON Files
+            // Purpose: Format all JSON configuration files with consistent indentation
+            // Features:
+            //   - Formats JSON files in config/ and .vscode/ directories
+            //   - Validates JSON syntax and reports errors
+            //   - Applies consistent 2-space indentation
+            //   - Preserves all data while improving readability
+            //   - Dry-run mode available for preview
+            // Usage: Run when JSON files need formatting cleanup
+            // Requirements: PowerShell 5.0+
+            "label": "Format JSON Files",
+            "type": "shell",
+            "command": "powershell.exe",
+            "args": [
+                "-ExecutionPolicy", "Bypass",
+                "-File", "${workspaceFolder}/scripts/format_json.ps1"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "detail": "Format all JSON configuration files with consistent 2-space indentation"
+        }
     ]
 }

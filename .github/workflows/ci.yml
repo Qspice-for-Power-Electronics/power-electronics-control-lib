@@ -1,16 +1,14 @@
 # *************************** In The Name Of God ***************************
 # * @file    ci.yml
-# * @brief   Continuous Integration workflow for WPT project
+# * @brief   Simple CI workflow
 # * @author  Dr.-Ing. Hossein Abedini
-# * @date    2025-06-08
-# * GitHub Actions workflow for automated building and testing of power
-# * electronics modules using Digital Mars Compiler on Windows.
-# * @note    Designed for real-time signal processing applications.
+# * @date    2025-06-22
+# * @note    Build verification using project_config.json configuration
 # * @license This work is dedicated to the public domain under CC0 1.0.
 # *          Please use it for good and beneficial purposes!
 # ***************************************************************************
 
-name: CI
+name: Build Test
 
 on:
   push:
@@ -25,54 +23,12 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Setup PowerShell
-      shell: powershell
-      run: |
-        Write-Host "PowerShell version: $($PSVersionTable.PSVersion)" -ForegroundColor Green
-        Write-Host "OS version: $([System.Environment]::OSVersion)" -ForegroundColor Green
-    
-    - name: Install Digital Mars Compiler
+    - name: Setup Digital Mars Compiler
       shell: powershell
       run: |
         Write-Host "Setting up Digital Mars Compiler..." -ForegroundColor Cyan
-        .\scripts\setup_compiler.ps1 -Quiet
-        if ($LASTEXITCODE -ne 0) {
+        .\scripts\setup_compiler.ps1 -Quiet        if ($LASTEXITCODE -ne 0) {
           throw "Failed to setup Digital Mars Compiler"
-        }
-    
-    - name: Install LLVM (clang-format, clang-tidy)
-      uses: KyleMayes/install-llvm-action@v2
-      with:
-        version: "17.0"
-        directory: ${{ runner.temp }}/llvm
-    
-    - name: Validate Project Structure
-      shell: powershell
-      run: |
-        Write-Host "Validating project structure..." -ForegroundColor Cyan
-        $requiredDirs = @("modules", "config", "scripts")
-        foreach ($dir in $requiredDirs) {
-          if (-not (Test-Path $dir)) {
-            throw "Required directory '$dir' not found"
-          }
-          Write-Host "✓ $dir directory found" -ForegroundColor Green
-        }
-        
-        $requiredFiles = @("config/project_config.json", "config/.clang-format")
-        foreach ($file in $requiredFiles) {
-          if (-not (Test-Path $file)) {
-            throw "Required file '$file' not found"
-          }
-          Write-Host "✓ $file found" -ForegroundColor Green
-        }
-    
-    - name: Code Quality Check
-      shell: powershell
-      run: |
-        Write-Host "Running code quality checks..." -ForegroundColor Cyan
-        .\scripts\cleanup_code.bat -DryRun
-        if ($LASTEXITCODE -ne 0) {
-          Write-Warning "Code quality check completed with warnings"
         }
     
     - name: Build All Modules
@@ -84,32 +40,39 @@ jobs:
           throw "Build failed with exit code $LASTEXITCODE"
         }
         
-        Write-Host "Verifying build outputs..." -ForegroundColor Cyan
-        $expectedDlls = @("ctrl.dll")
-        foreach ($dll in $expectedDlls) {
-          if (-not (Test-Path $dll)) {
-            throw "Expected output '$dll' not found"
-          }
-          $size = (Get-Item $dll).Length
-          Write-Host "✓ $dll built successfully ($size bytes)" -ForegroundColor Green
-        }    
-    - name: Upload Build Artifacts
-      if: success()
-      uses: actions/upload-artifact@v4
-      with:
-        name: qspice-modules
-        path: |
-          *.dll
-          build/*.obj
-          build/*.map
-        retention-days: 30
+        # Read expected modules from project configuration
+        $config = Get-Content "config/project_config.json" | ConvertFrom-Json
+        $expectedDlls = @()
         
-    - name: Upload Build Logs
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: build-logs
-        path: |
-          build/
-          *.log
-        retention-days: 7
+        # Extract expected DLL outputs from QSPICE modules
+        foreach ($module in $config.modules.qspice_modules.components.PSObject.Properties) {
+          $moduleConfig = $module.Value
+          if ($moduleConfig.output_dll) {
+            $expectedDlls += $moduleConfig.output_dll
+            Write-Host "Expecting: $($moduleConfig.output_dll)" -ForegroundColor Yellow
+          }
+        }
+        
+        # Verify expected DLLs were created
+        $missingDlls = @()
+        $builtDlls = @()
+        
+        foreach ($expectedDll in $expectedDlls) {
+          if (Test-Path $expectedDll) {
+            $builtDlls += Get-Item $expectedDll
+            Write-Host "✓ Found: $expectedDll" -ForegroundColor Green
+          } else {
+            $missingDlls += $expectedDll
+            Write-Host "❌ Missing: $expectedDll" -ForegroundColor Red
+          }
+        }
+        
+        if ($missingDlls.Count -gt 0) {
+          throw "Missing expected DLL modules: $($missingDlls -join ', ')"
+        }
+        
+        Write-Host "✓ Build completed successfully - Built $($builtDlls.Count)/$($expectedDlls.Count) module(s):" -ForegroundColor Green
+        foreach ($dll in $builtDlls) {
+          $size = [math]::Round($dll.Length / 1KB, 1)
+          Write-Host "  - $($dll.Name) ($size KB)" -ForegroundColor Green
+        }
