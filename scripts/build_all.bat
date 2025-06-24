@@ -32,6 +32,11 @@ REM - LLVM/Clang (clang-format) in PATH
 REM - modules/ directory with proper structure
 REM - config/.clang-format file
 REM
+REM IMPORTANT SETUP NOTES:
+REM - Run VS Code as Administrator for the setup script to work properly
+REM - Restart VS Code completely after running "Setup Compiler" task
+REM - The setup script modifies system PATH which requires VS Code restart
+REM
 REM OUTPUT:
 REM - Individual DLL files for each QSPICE module (e.g., ctrl.dll)
 REM - Build artifacts in build/ directory
@@ -64,7 +69,14 @@ REM Check if Digital Mars Compiler is available (used for compiling C++ code)
 where dmc >nul 2>&1
 if errorlevel 1 (
     echo Error: Digital Mars Compiler ^(dmc^) not found in PATH
-    echo Please install DMC and add to PATH
+    echo.
+    echo SOLUTION:
+    echo 1. Run the "Setup Compiler" task first to install DMC
+    echo 2. Make sure VS Code is running as Administrator
+    echo 3. Restart VS Code completely after DMC installation
+    echo 4. The setup script adds DMC to system PATH, but VS Code needs restart to see it
+    echo.
+    echo If DMC is already installed at C:\dm\bin\dmc.exe, restart VS Code to refresh PATH
     exit /b 1
 )
 

@@ -14,32 +14,36 @@
 # Power Electronics Control Library - Digital Mars Compiler Setup Script
 # ================================================================================
 # 
-# This script automatically downloads and configures the Digital Mars Compiler
-# (DMC) for building power electronics control modules used in QSPICE simulations.
+# This script automatically downloads and installs the Digital Mars Compiler
+# (DMC) to the standard system location (C:\dm) for building power electronics 
+# control modules used in QSPICE simulations.
 #
 # WHAT THIS SCRIPT DOES:
-# 1. Checks if Digital Mars Compiler is already installed
+# 1. Checks if Digital Mars Compiler is already installed in C:\dm
 # 2. Downloads DMC from official sources if not present
-# 3. Extracts compiler to project-local compiler/ directory
-# 4. Configures compiler PATH for immediate use
+# 3. Installs compiler to standard system location (C:\dm)
+# 4. Adds DMC to system PATH permanently for all users
 # 5. Validates installation by testing basic compilation
-# 6. Creates portable, self-contained development environment
+# 6. Creates system-wide development environment
 #
 # REQUIREMENTS:
 # - PowerShell 5.0 or higher
+# - Administrator privileges (required for system installation)
 # - Internet connection for downloading compiler
-# - Write permissions to project directory
 # - Windows operating system (DMC is Windows-only)
 #
 # OUTPUT:
-# - compiler/ directory with complete DMC installation
-# - Configured environment ready for building QSPICE modules
+# - C:\dm directory with complete DMC installation
+# - System PATH updated to include C:\dm\bin
 # - Validation report showing compiler capabilities
 #
 # USAGE:
 #   .\setup_compiler.ps1                    # Standard installation
 #   .\setup_compiler.ps1 -Force             # Force reinstall
 #   .\setup_compiler.ps1 -Quiet             # Suppress verbose output
+#
+# NOTE: This script requires Administrator privileges to install to C:\dm
+#       and modify the system PATH. Run PowerShell as Administrator.
 #
 # ================================================================================
 
@@ -55,10 +59,10 @@ $ErrorActionPreference = "Stop"
 # STEP 1: Initialize Configuration and Paths
 # ================================================================================
 
-# Define paths relative to script location for portability
-$CompilerDir = Join-Path $PSScriptRoot "..\compiler"
+# Define paths for system-wide installation
+$CompilerDir = "C:\dm"  # Standard DMC location
 $TempDir = Join-Path $env:TEMP "dmc_setup"
-$DownloadUrl = "https://github.com/DigitalMars/dmc/archive/refs/heads/master.zip"
+$DownloadUrl = "http://ftp.digitalmars.com/dmc.zip"
 $BackupUrl = "http://ftp.digitalmars.com/dm857c.zip"
 
 # ================================================================================
@@ -77,119 +81,44 @@ function Write-Error-Status {
     Write-Host "[$((Get-Date).ToString('HH:mm:ss'))] ERROR: $Message" -ForegroundColor Red
 }
 
+function Add-ToSystemPath {
+    param([string]$NewPath)
+    
+    $BinPath = Join-Path $NewPath "bin"
+    
+    try {
+        # Get current system PATH
+        $CurrentPath = [Environment]::GetEnvironmentVariable("PATH", "Machine")
+        
+        # Check if path is already in PATH
+        $PathsArray = $CurrentPath -split ";"
+        if ($PathsArray -contains $BinPath) {
+            Write-Status "DMC bin directory already in system PATH" "Green"
+            return $true
+        }
+        
+        # Add DMC bin directory to PATH
+        $NewSystemPath = $CurrentPath + ";" + $BinPath
+        [Environment]::SetEnvironmentVariable("PATH", $NewSystemPath, "Machine")
+        
+        # Also update current session PATH
+        $env:PATH += ";" + $BinPath
+        
+        Write-Status "Successfully added $BinPath to system PATH" "Green"
+        return $true
+    }
+    catch {
+        Write-Error-Status "Failed to add to system PATH: $($_.Exception.Message)"
+        return $false
+    }
+}
+
 function Test-CompilerInstalled {
-    # Check if DMC is properly installed in project compiler directory
+    # Check if DMC is properly installed in standard system location
     $DmcPath = Join-Path $CompilerDir "bin\dmc.exe"
     $IncludePath = Join-Path $CompilerDir "include"
     
     return (Test-Path $DmcPath) -and (Test-Path $IncludePath)
-}
-
-function Test-SystemCompilerInstalled {
-    # Check if DMC is available in system PATH (system-wide installation)
-    try {
-        $null = Get-Command dmc -ErrorAction Stop
-        Write-Status "Found Digital Mars Compiler in system PATH" "Yellow"
-        return $true
-    }
-    catch {
-        return $false
-    }
-}
-
-function Copy-SystemCompilerToProject {
-    # Try to find system DMC installation and copy to project for portability
-    try {
-        $DmcCommand = Get-Command dmc -ErrorAction Stop
-        $SystemDmcPath = $DmcCommand.Source
-        $SystemDmcDir = Split-Path $SystemDmcPath -Parent
-        $SystemRootDir = Split-Path $SystemDmcDir -Parent
-        
-        Write-Status "Found system DMC at: $SystemRootDir"
-        
-        # Verify this looks like a valid DMC installation with required directories
-        $SystemInclude = Join-Path $SystemRootDir "include"
-        $SystemLib = Join-Path $SystemRootDir "lib"
-        
-        if ((Test-Path $SystemInclude) -and (Test-Path $SystemLib)) {
-            Write-Status "Copying system DMC installation to project..."
-            
-            # Remove existing local installation if any to ensure clean state
-            if (Test-Path $CompilerDir) {
-                Remove-Item $CompilerDir -Recurse -Force
-            }
-            
-            # Copy the entire DMC directory structure for complete installation
-            Copy-Item $SystemRootDir $CompilerDir -Recurse -Force
-            
-            Write-Status "Successfully copied system DMC to project" "Green"
-            return $true
-        }
-        else {
-            Write-Status "System DMC installation appears incomplete" "Yellow"
-            return $false
-        }
-    }
-    catch {
-        Write-Status "Could not locate or copy system DMC installation" "Yellow"
-        return $false
-    }
-}
-
-function Find-CommonDmcLocations {
-    # Check common installation locations for DMC across different setups
-    $CommonPaths = @(
-        "C:\dm",                                        # Standard DMC location
-        "C:\dmc",                                       # Alternative DMC location
-        "C:\Program Files\Digital Mars",               # Program Files installation
-        "C:\Program Files (x86)\Digital Mars",         # 32-bit Program Files
-        "D:\dm",                                        # Alternative drive
-        "F:\Softwares\Qspice\dm857c\dm",               # QSPICE integration path
-        "$env:ProgramFiles\DMC",                       # Environment-based path
-        "$env:ProgramFiles(x86)\DMC"                   # 32-bit environment path
-    )
-    
-    foreach ($Path in $CommonPaths) {
-        # Check if the drive exists before testing the path
-        $Drive = Split-Path $Path -Qualifier
-        if (!(Test-Path $Drive)) {
-            Write-Status "Skipping non-existent drive: $Drive" "Yellow"
-            continue
-        }
-        
-        $DmcExe = Join-Path $Path "bin\dmc.exe"
-        $IncludeDir = Join-Path $Path "include"
-        
-        if ((Test-Path $DmcExe) -and (Test-Path $IncludeDir)) {
-            Write-Status "Found DMC installation at: $Path" "Yellow"
-            return $Path
-        }
-    }
-    
-    return $null
-}
-
-function Copy-CommonLocationToProject {
-    param([string]$SourcePath)
-    
-    try {
-        Write-Status "Copying DMC from $SourcePath to project..."
-        
-        # Remove existing local installation if any
-        if (Test-Path $CompilerDir) {
-            Remove-Item $CompilerDir -Recurse -Force
-        }
-        
-        # Copy the entire DMC directory
-        Copy-Item $SourcePath $CompilerDir -Recurse -Force
-        
-        Write-Status "Successfully copied DMC to project" "Green"
-        return $true
-    }
-    catch {
-        Write-Error-Status "Failed to copy DMC: $($_.Exception.Message)"
-        return $false
-    }
 }
 
 function Download-File {
@@ -258,48 +187,30 @@ function Extract-Archive {
 
 function Setup-Compiler {
     Write-Status "=== Digital Mars Compiler Setup ===" "Cyan"
+    Write-Status "Installing to standard location: $CompilerDir" "Cyan"
     
-    # Check if compiler already exists in project
+    # Check if compiler already exists in standard location
     if ((Test-CompilerInstalled) -and (-not $Force)) {
-        Write-Status "Digital Mars Compiler already installed in project: $CompilerDir" "Green"
-        Write-Status "Use -Force to re-download" "Yellow"
+        Write-Status "Digital Mars Compiler already installed at: $CompilerDir" "Green"
+        Write-Status "Use -Force to re-install" "Yellow"
+        
+        # Ensure it's in PATH
+        Add-ToSystemPath $CompilerDir
         return $true
     }
-      # Check if compiler exists in system PATH
-    if (Test-SystemCompilerInstalled) {
-        Write-Status "Found system installation of Digital Mars Compiler" "Yellow"
-        
-        if (-not $Force) {
-            Write-Status "Attempting to copy system installation to project..." "Yellow"
-            if (Copy-SystemCompilerToProject) {
-                Write-Status "Successfully used existing system installation!" "Green"
-                return $true
-            }
-            else {
-                Write-Status "Could not copy system installation, will check common locations..." "Yellow"
-            }
-        }
-        else {
-            Write-Status "Force flag set, downloading fresh copy..." "Yellow"
-        }
+    
+    # Check if we have administrator privileges (required for C:\dm installation)
+    $CurrentUser = [Security.Principal.WindowsIdentity]::GetCurrent()
+    $Principal = [Security.Principal.WindowsPrincipal]$CurrentUser
+    $IsAdmin = $Principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+    
+    if (-not $IsAdmin) {
+        Write-Error-Status "Administrator privileges required to install to $CompilerDir"
+        Write-Status "Please run PowerShell as Administrator" "Yellow"
+        return $false
     }
     
-    # Check common installation locations
-    if (-not $Force) {
-        $CommonLocation = Find-CommonDmcLocations
-        if ($CommonLocation) {
-            Write-Status "Attempting to copy from common location: $CommonLocation" "Yellow"
-            if (Copy-CommonLocationToProject $CommonLocation) {
-                Write-Status "Successfully used existing installation!" "Green"
-                return $true
-            }
-            else {
-                Write-Status "Could not copy from common location, will download..." "Yellow"
-            }
-        }
-    }
-    
-    Write-Status "No suitable existing installation found, downloading..." "Yellow"
+    Write-Status "Downloading and installing Digital Mars Compiler to $CompilerDir..." "Yellow"
     
     # Create temp directory
     if (Test-Path $TempDir) {
@@ -307,7 +218,7 @@ function Setup-Compiler {
     }
     New-Item -ItemType Directory -Path $TempDir -Force | Out-Null
     
-    $ZipFile = Join-Path $TempDir "dmc-master.zip"
+    $ZipFile = Join-Path $TempDir "dmc.zip"
     
     # Try primary download URL
     Write-Status "Downloading Digital Mars Compiler..."
@@ -332,9 +243,9 @@ function Setup-Compiler {
     
     Write-Status "Download successful: $([Math]::Round((Get-Item $ZipFile).Length / 1MB, 2)) MB"
     
-    # Remove existing compiler directory if forcing
-    if ($Force -and (Test-Path $CompilerDir)) {
-        Write-Status "Removing existing compiler installation..."
+    # Remove existing compiler directory if forcing or if exists
+    if (Test-Path $CompilerDir) {
+        Write-Status "Removing existing installation..."
         Remove-Item $CompilerDir -Recurse -Force
     }
     
@@ -343,14 +254,15 @@ function Setup-Compiler {
     if (-not (Extract-Archive $ZipFile $ExtractPath)) {
         return $false
     }
-      # Find the actual compiler directory (might be nested)
+    
+    # Find the actual compiler directory (might be nested)
     $DmcSource = $null
     $PossiblePaths = @(
-        (Join-Path $ExtractPath "dmc-master"),
-        (Join-Path $ExtractPath "dmc-master\dm"),
         (Join-Path $ExtractPath "dm"),
         (Join-Path $ExtractPath "dmc"),
         (Join-Path $ExtractPath "dm857c\dm"),
+        (Join-Path $ExtractPath "dmc-master\dm"),
+        (Join-Path $ExtractPath "dmc-master"),
         $ExtractPath
     )
     
@@ -367,13 +279,12 @@ function Setup-Compiler {
         return $false
     }
     
-    # Copy to final location
+    # Install to standard location
     Write-Status "Installing compiler to: $CompilerDir"
-    if (Test-Path $CompilerDir) {
-        Remove-Item $CompilerDir -Recurse -Force
-    }
-    
     Copy-Item $DmcSource $CompilerDir -Recurse -Force
+    
+    # Add to system PATH permanently
+    $PathAdded = Add-ToSystemPath $CompilerDir
     
     # Cleanup temp files
     Remove-Item $TempDir -Recurse -Force
@@ -383,6 +294,11 @@ function Setup-Compiler {
         Write-Status "=== Setup Complete! ===" "Green"
         Write-Status "Digital Mars Compiler installed successfully" "Green"
         Write-Status "Location: $CompilerDir" "Green"
+        
+        if ($PathAdded) {
+            Write-Status "DMC added to system PATH permanently" "Green"
+            Write-Status "You can now use 'dmc' command from any location" "Green"
+        }
         
         # Show version info
         $DmcExe = Join-Path $CompilerDir "bin\dmc.exe"
