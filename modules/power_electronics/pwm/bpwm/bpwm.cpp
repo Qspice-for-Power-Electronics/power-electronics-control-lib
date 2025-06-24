@@ -108,6 +108,6 @@ void bpwm_step(bpwm_t* const p_bpwm, const float t, const float duty, const floa
     }
 
     /* ClkOut: true at counter reset (start of period), else false */
-    p_bpwm->outputs.ClkOut = (fmodf(carrier_raw, 1.0F) < BPWM_PHASE_TOLERANCE) ? true : false; /* PWM output: pulse when selected carrier < duty */
+    p_bpwm->outputs.ClkOut = static_cast<bool>(fmodf(carrier_raw, 1.0F) < BPWM_PHASE_TOLERANCE); /* PWM output: pulse when selected carrier < duty */
     p_bpwm->outputs.PWM    = (selected_carrier < duty) ? p_bpwm->params.gate_on_voltage : p_bpwm->params.gate_off_voltage;
 }

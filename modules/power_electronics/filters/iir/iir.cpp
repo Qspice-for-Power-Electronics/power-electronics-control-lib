@@ -24,8 +24,8 @@
  */
 static inline void clear_state(iir_state_t* const p_state)
 {
-    p_state->y_prev = 0.0f;
-    p_state->u_prev = 0.0f;
+    p_state->y_prev = 0.0F;
+    p_state->u_prev = 0.0F;
 }
 
 /**
@@ -34,7 +34,7 @@ static inline void clear_state(iir_state_t* const p_state)
  */
 static inline void clear_outputs(iir_outputs_t* const p_outputs)
 {
-    p_outputs->y = 0.0f;
+    p_outputs->y = 0.0F;
 }
 
 /**************************** PUBLIC FUNCTIONS *******************************/
@@ -47,8 +47,8 @@ static inline void clear_outputs(iir_outputs_t* const p_outputs)
  */
 float iir_calc_a(float Ts, float fc)
 {
-    float const x = 2.0f * (float)M_PI * Ts * fc;
-    return x / (x + 1.0f);
+    float const x = 2.0F * (float)M_PI * Ts * fc;
+    return x / (x + 1.0F);
 }
 
 /**
@@ -64,7 +64,7 @@ void iir_init(iir_t* const p_mod, const iir_params_t* const p_params)
     p_mod->params.a    = p_params->a;
 
     // Auto-calculate coefficient if not provided or invalid
-    if (p_mod->params.a <= 0.0f && p_mod->params.fc > 0.0f && p_mod->params.Ts > 0.0f)
+    if (p_mod->params.a <= 0.0F && p_mod->params.fc > 0.0F && p_mod->params.Ts > 0.0F)
     {
         p_mod->params.a = iir_calc_a(p_mod->params.Ts, p_mod->params.fc);
     }
@@ -91,16 +91,16 @@ void iir_step(iir_t* const p_mod, const float input_signal)
 {
     float const a = p_mod->params.a;
     float const u = input_signal;
-    float       y = 0.0f;
+    float       y = 0.0F;
     if (p_mod->params.type == IIR_LOWPASS)
     {
         // Lowpass: y(k) = a*u(k) + (1-a)*y(k-1)
-        y = a * u + (1.0f - a) * p_mod->state.y_prev;
+        y = a * u + (1.0F - a) * p_mod->state.y_prev;
     }
     else
     {
         // Highpass: y(k) = (1-a)*(u(k)-u(k-1)+y(k-1))
-        y = (1.0f - a) * (u - p_mod->state.u_prev + p_mod->state.y_prev);
+        y = (1.0F - a) * (u - p_mod->state.u_prev + p_mod->state.y_prev);
     }
 
     p_mod->outputs.y    = y;

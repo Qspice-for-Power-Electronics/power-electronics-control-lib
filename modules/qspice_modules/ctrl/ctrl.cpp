@@ -179,63 +179,63 @@ extern "C" __declspec(dllexport) void ctrl(void** opaque, double t, union uData*
     static epwm_t epwm2;
     static epwm_t epwm3;
     static epwm_t epwm4;
-    static int    mod_initialized = 0;
+    static bool   mod_initialized = false;
     if (!mod_initialized)
     {
         // Initialize BPWM module (original)
-        bpwm_params_t const bpwm_params = {10e-6f, BPWM_CARRIER_CENTER_ALIGNED, 15.0f,
-                                           0.0f};  // Ts, carrier_select, gate_on_voltage, gate_off_voltage
+        bpwm_params_t const bpwm_params = {10e-6F, BPWM_CARRIER_CENTER_ALIGNED, 15.0F,
+                                           0.0F};  // Ts, carrier_select, gate_on_voltage, gate_off_voltage
         bpwm_init(&bpwm_mod, &bpwm_params);
 
         // Initialize IIR filter
-        iir_params_t const lpf_params = {1e-4f, 100.0f, IIR_LOWPASS, 0.0f};  // Ts, fc, type=lowpass, a=auto
+        iir_params_t const lpf_params = {1e-4F, 100.0F, IIR_LOWPASS, 0.0F};  // Ts, fc, type=lowpass, a=auto
         iir_init(&lpf, &lpf_params);                                         // Initialize ePWM modules        // Common ePWM parameters
         epwm_params_t const base_epwm_params = {
-            .Ts                = 10e-6f,  // 10µs sampling time (equivalent to 100kHz carrier)
+            .Ts                = 10e-6F,  // 10µs sampling time (equivalent to 100kHz carrier)
             .pwm_mode          = EPWM_MODE_ACTIVE_HIGH_CMPA_FIRST,
-            .gate_on_voltage   = 1.0f,
-            .gate_off_voltage  = 0.0f,
+            .gate_on_voltage   = 1.0F,
+            .gate_off_voltage  = 0.0F,
             .sync_enable       = false,
-            .phase_offset      = 0.0f,
-            .dead_time_rising  = 400e-9f,  // 200ns rising dead time
-            .dead_time_falling = 100e-9f   // 150ns falling dead time
+            .phase_offset      = 0.0F,
+            .dead_time_rising  = 400e-9F,  // 200ns rising dead time
+            .dead_time_falling = 100e-9F   // 150ns falling dead time
         };  // ePWM1 (Master): No phase offset
         epwm_init(&epwm1, &base_epwm_params);  // ePWM2: 90° phase shift (quarter period)
         epwm_params_t epwm2_params = base_epwm_params;
         epwm2_params.sync_enable   = true;
-        epwm2_params.phase_offset  = 0.25f * base_epwm_params.Ts;  // 90° phase shift (quarter period)
+        epwm2_params.phase_offset  = 0.25F * base_epwm_params.Ts;  // 90° phase shift (quarter period)
         epwm_init(&epwm2, &epwm2_params);
 
         // ePWM3: 180° phase shift (half period)
         epwm_params_t epwm3_params = base_epwm_params;
         epwm3_params.sync_enable   = true;
-        epwm3_params.phase_offset  = 0.5f * base_epwm_params.Ts;  // 180° phase shift (half period)
+        epwm3_params.phase_offset  = 0.5F * base_epwm_params.Ts;  // 180° phase shift (half period)
         epwm_init(&epwm3, &epwm3_params);
 
         // ePWM4: 270° phase shift (three-quarter period)
         epwm_params_t epwm4_params = base_epwm_params;
         epwm4_params.sync_enable   = true;
-        epwm4_params.phase_offset  = 0.75f * base_epwm_params.Ts;  // 270° phase shift
+        epwm4_params.phase_offset  = 0.75F * base_epwm_params.Ts;  // 270° phase shift
         epwm_init(&epwm4, &epwm4_params);
 
-        mod_initialized = 1;
+        mod_initialized = true;
     }
 
     // Update BPWM module (original)
-    bpwm_step(&bpwm_mod, static_cast<float>(t), 0.5f, 0.0f);  // Example: 50% duty cycle, 0 phase offset
+    bpwm_step(&bpwm_mod, static_cast<float>(t), 0.5F, 0.0F);  // Example: 50% duty cycle, 0 phase offset
 
     // Update ePWM modules with different duty cycles
-    float const cmpa1 = 0.25f;  // 25% duty cycle for ePWM1
-    float const cmpb1 = 0.75f;
+    float const cmpa1 = 0.25F;  // 25% duty cycle for ePWM1
+    float const cmpb1 = 0.75F;
 
-    float const cmpa2 = 0.30f;  // 30% duty cycle for ePWM2
-    float const cmpb2 = 0.70f;
+    float const cmpa2 = 0.30F;  // 30% duty cycle for ePWM2
+    float const cmpb2 = 0.70F;
 
-    float const cmpa3 = 0.35f;  // 35% duty cycle for ePWM3
-    float const cmpb3 = 0.65f;
+    float const cmpa3 = 0.35F;  // 35% duty cycle for ePWM3
+    float const cmpb3 = 0.65F;
 
-    float const cmpa4 = 0.40f;  // 40% duty cycle for ePWM4
-    float const cmpb4 = 0.60f;
+    float const cmpa4 = 0.40F;  // 40% duty cycle for ePWM4
+    float const cmpb4 = 0.60F;
 
     // Execute PWM steps (epwm1 is master, others are synchronized with its period_sync signal)
     epwm_step(&epwm1, static_cast<float>(t), cmpa1, cmpb1, false);

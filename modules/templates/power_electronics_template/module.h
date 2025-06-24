@@ -45,14 +45,14 @@ extern "C"
      */
     typedef enum
     {
-        MODULE_MODE1 = 0u, /* [REPLACE: Description of first mode/type] */
-        MODULE_MODE2 = 1u, /* [REPLACE: Description of second mode/type] */
-        MODULE_MODE3 = 2u, /* [REPLACE: Description of third mode/type] */
-        MODULE_MODE4 = 3u, /* [REPLACE: Description of fourth mode/type] */
-        MODULE_MODE5 = 4u, /* [REPLACE: Description of fifth mode/type] */
-        MODULE_MODE6 = 5u, /* [REPLACE: Description of sixth mode/type] */
-        MODULE_MODE7 = 6u, /* [REPLACE: Description of seventh mode/type] */
-        MODULE_MODE8 = 7u  /* [REPLACE: Description of eighth mode/type] */
+        MODULE_MODE1 = 0U, /* [REPLACE: Description of first mode/type] */
+        MODULE_MODE2 = 1U, /* [REPLACE: Description of second mode/type] */
+        MODULE_MODE3 = 2U, /* [REPLACE: Description of third mode/type] */
+        MODULE_MODE4 = 3U, /* [REPLACE: Description of fourth mode/type] */
+        MODULE_MODE5 = 4U, /* [REPLACE: Description of fifth mode/type] */
+        MODULE_MODE6 = 5U, /* [REPLACE: Description of sixth mode/type] */
+        MODULE_MODE7 = 6U, /* [REPLACE: Description of seventh mode/type] */
+        MODULE_MODE8 = 7U  /* [REPLACE: Description of eighth mode/type] */
     } module_mode_t;
 
     /**

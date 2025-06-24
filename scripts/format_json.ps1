@@ -107,7 +107,7 @@ foreach ($location in $JsonLocations) {
                     Write-Host "  Would format: $($file.Name)" -ForegroundColor Yellow
                     $FilesFormatted++
                 } else {
-                    $formattedLines | Set-Content $file.FullName -Encoding UTF8
+                    $formattedLines | Set-Content $file.FullName -Encoding UTF8NoBOM
                     Write-Host "  Formatted: $($file.Name)" -ForegroundColor Green
                     $FilesFormatted++
                 }

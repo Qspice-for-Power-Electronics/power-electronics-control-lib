@@ -89,7 +89,7 @@ extern "C" __declspec(dllexport) void qspice_module(void** opaque, double t, uni
     // static PwmModule  pwm_gen;
 
     // One-time initialization
-    static int modules_initialized = 0;
+    static bool modules_initialized = false;
     if (!modules_initialized)
     {
         // [REPLACE: Initialize your modules with appropriate parameters]
@@ -103,7 +103,7 @@ extern "C" __declspec(dllexport) void qspice_module(void** opaque, double t, uni
         // PwmParams const pwm_params = {10e-6f, 0, 15.0f};  // Ts, carrier_select, gate_on_voltage
         // pwm_module_init(&pwm_gen, &pwm_params);
 
-        modules_initialized = 1;
+        modules_initialized = true;
     }
 
     // [REPLACE: Implement your main processing logic here]

@@ -19,18 +19,18 @@ REM This script performs comprehensive project cleanup and quality improvements 
 REM C++ source files in the project, including build artifact cleanup, const correctness, formatting,
 REM include cleanup, and various code quality warnings.
 REM
-REM WHAT THIS SCRIPT DOES:
+REM WHAT THIS SCRIPT DOES (OPTIMIZED ORDER):
 REM 1. Validates required tools (clang-format, clang-tidy)
 REM 2. Ensures project is built (needed for static analysis)
-REM 3. Applies const correctness fixes (adds const where appropriate)
-REM 4. Adds parentheses around #define values for safer macro definitions
-REM 5. Formats all source code using clang-format
-REM 6. Formats JSON configuration files for consistency
-REM 7. Removes unnecessary #include statements
-REM 8. Updates module dependencies automatically by scanning #include statements
-REM 9. Fixes modernization issues (C++11 improvements)
-REM 10. Corrects performance issues (move semantics, etc.)
-REM 11. Addresses readability and maintainability concerns
+REM 3. Adds parentheses around #define values for safer macro definitions
+REM 4. Removes unnecessary #include statements (do early to reduce dependencies)
+REM 5. Updates module dependencies automatically by scanning #include statements
+REM 6. Applies const correctness fixes (adds const where appropriate)
+REM 7. Fixes modernization issues (C++11 improvements)
+REM 8. Corrects performance issues (move semantics, etc.)
+REM 9. Addresses readability and maintainability concerns
+REM 10. Formats all source code using clang-format (after all content changes)
+REM 11. Formats JSON configuration files for consistency
 REM 12. Reports remaining warnings that require manual attention
 REM 13. Cleans all build artifacts and temporary files
 REM
@@ -151,11 +151,39 @@ if not exist build\*.obj (
 )
 
 REM ================================================================================
-REM STEP 4: Phase 1 - Const Correctness and Core Fixes
+REM STEP 4: Phase 1 - Macro Parentheses Safety
 REM ================================================================================
 
 echo ================================================================================
-echo PHASE 1: Applying const correctness and core improvements...
+echo PHASE 1: Adding macro parentheses for safety...
+echo ================================================================================
+
+REM Add parentheses around #define values for safer macro definitions
+REM This prevents operator precedence issues in macro expansions
+echo Adding parentheses to macro definitions...
+
+if "!DRY_RUN!"=="true" (
+    echo Running macro parentheses check in preview mode...
+    powershell.exe -ExecutionPolicy Bypass -File "scripts\add_macro_parentheses.ps1" -DryRun
+) else (
+    echo Applying macro parentheses fixes...
+    powershell.exe -ExecutionPolicy Bypass -File "scripts\add_macro_parentheses.ps1"
+)
+
+if errorlevel 1 (
+    echo Warning: Issues found during macro parentheses processing
+    set /a ERROR_COUNT+=1
+)
+
+echo Phase 1 completed - Macro parentheses applied
+echo.
+
+REM ================================================================================
+REM STEP 5: Phase 2 - Include Cleanup
+REM ================================================================================
+
+echo ================================================================================
+echo PHASE 2: Cleaning unnecessary includes...
 echo ================================================================================
 
 REM Set up clang-tidy flags for automatic fixes and include paths from config
@@ -176,127 +204,6 @@ if "!DRY_RUN!"=="true" (
 ) else (
     set TIDY_FLAGS=--format-style=file --fix --fix-errors --quiet
 )
-
-REM Define core improvement checks (const correctness, basic modernization)
-set CORE_CHECKS=misc-const-correctness,cppcoreguidelines-const-correctness,modernize-use-nullptr,modernize-use-override,modernize-use-auto,performance-unnecessary-copy-initialization
-
-REM Process each source file for core improvements
-for /r "modules" %%f in (*.cpp *.h) do (
-    set /a FILES_PROCESSED+=1
-    echo [!FILES_PROCESSED!/!SOURCE_FILE_COUNT!] Processing %%~nxf for const correctness...
-    
-    REM Force C++ mode for all files to avoid language detection issues
-    REM Use -x c++ to explicitly tell clang-tidy to treat the file as C++
-    set LANG_FLAGS=-x c++ -std=c++11
-    if /i "%%~xf"==".c" set LANG_FLAGS=-x c -std=c99
-    
-    REM Apply core fixes with proper include paths and explicit language mode
-    clang-tidy !TIDY_FLAGS! --checks="!CORE_CHECKS!" "%%f" -- !LANG_FLAGS! !CLANG_INCLUDE_PATHS!
-    if errorlevel 1 (
-        echo Warning: Issues found in %%f during core cleanup
-        set /a ERROR_COUNT+=1
-    )
-)
-
-echo Phase 1 completed - Core improvements applied
-echo.
-
-REM ================================================================================
-REM STEP 5: Phase 1.5 - Macro Parentheses Safety
-REM ================================================================================
-
-echo ================================================================================
-echo PHASE 1.5: Adding macro parentheses for safety...
-echo ================================================================================
-
-REM Add parentheses around #define values for safer macro definitions
-REM This prevents operator precedence issues in macro expansions
-echo Adding parentheses to macro definitions...
-
-if "!DRY_RUN!"=="true" (
-    echo Running macro parentheses check in preview mode...
-    powershell.exe -ExecutionPolicy Bypass -File "scripts\add_macro_parentheses.ps1" -DryRun
-) else (
-    echo Applying macro parentheses fixes...
-    powershell.exe -ExecutionPolicy Bypass -File "scripts\add_macro_parentheses.ps1"
-)
-
-if errorlevel 1 (
-    echo Warning: Issues found during macro parentheses processing
-    set /a ERROR_COUNT+=1
-)
-
-echo Phase 1.5 completed - Macro parentheses applied
-echo.
-
-REM ================================================================================
-REM STEP 6: Phase 2 - Code Formatting
-REM ================================================================================
-
-echo ================================================================================
-echo PHASE 2: Applying code formatting...
-echo ================================================================================
-
-REM Apply consistent formatting to all source files
-set FILES_FORMATTED=0
-for /r "modules" %%f in (*.cpp *.h) do (
-    set /a FILES_FORMATTED+=1
-    echo [!FILES_FORMATTED!/!SOURCE_FILE_COUNT!] Formatting %%~nxf...
-    
-    if "!DRY_RUN!"=="false" (
-        clang-format -i -style=file:config/.clang-format "%%f"
-        if errorlevel 1 (
-            echo Error formatting %%f
-            set /a ERROR_COUNT+=1
-        )
-    ) else (
-        REM In dry-run mode, just check formatting
-        clang-format --dry-run -Werror -style=file:config/.clang-format "%%f" >nul 2>&1
-        if errorlevel 1 (
-            echo Would reformat: %%f
-        )
-    )
-)
-
-echo Phase 2 completed - Code formatting applied
-echo.
-
-REM ================================================================================
-REM STEP 7: Phase 2.5 - JSON File Formatting
-REM ================================================================================
-
-echo ================================================================================
-echo PHASE 2.5: Formatting JSON configuration files...
-echo ================================================================================
-
-REM Apply consistent formatting to all JSON files in the project
-echo Formatting JSON configuration files...
-
-if "!DRY_RUN!"=="true" (
-    echo Running JSON formatting in preview mode...
-    powershell.exe -ExecutionPolicy Bypass -File "scripts\format_json.ps1" -DryRun
-) else (
-    echo Applying JSON formatting...
-    powershell.exe -ExecutionPolicy Bypass -File "scripts\format_json.ps1"
-)
-
-if errorlevel 1 (
-    echo Warning: Issues found during JSON formatting
-    set /a ERROR_COUNT+=1
-) else (
-    echo JSON formatting completed successfully
-)
-
-echo Phase 2.5 completed - JSON formatting applied
-echo.
-
-REM ================================================================================
-REM STEP 8: Phase 3 - Include Cleanup
-REM ================================================================================
-
-echo ================================================================================
-echo PHASE 3: Cleaning unnecessary includes...
-echo ================================================================================
 
 REM Define include cleanup checks to remove unnecessary headers
 set INCLUDE_CLEANUP_CHECKS=misc-include-cleaner,readability-redundant-preprocessor
@@ -320,15 +227,15 @@ for /r "modules" %%f in (*.cpp *.h) do (
     )
 )
 
-echo Phase 3 completed - Include cleanup applied
+echo Phase 2 completed - Include cleanup applied
 echo.
 
 REM ================================================================================
-REM STEP 9: Phase 4 - Update Module Dependencies
+REM STEP 6: Phase 3 - Update Module Dependencies
 REM ================================================================================
 
 echo ================================================================================
-echo PHASE 4: Updating module dependencies automatically...
+echo PHASE 3: Updating module dependencies automatically...
 echo ================================================================================
 
 REM Scan #include statements and update dependencies in project_config.json
@@ -349,48 +256,178 @@ if errorlevel 1 (
     set /a ERROR_COUNT+=1
 )
 
-echo Phase 4 completed - Dependencies updated
+echo Phase 3 completed - Dependencies updated
 echo.
 
 REM ================================================================================
-REM STEP 10: Phase 5 - Advanced Analysis
+REM STEP 7: Phase 4 - Const Correctness and Core Fixes
 REM ================================================================================
 
 echo ================================================================================
-echo PHASE 5: Advanced analysis and improvements...
+echo PHASE 4: Applying const correctness and core improvements...
 echo ================================================================================
+REM Define core improvement checks (const correctness, selective modernization)
+REM Exclude modernize-use-using to preserve typedef struct syntax for C compatibility
+set CORE_CHECKS=misc-const-correctness,cppcoreguidelines-const-correctness,modernize-use-nullptr,modernize-use-override,modernize-use-auto,performance-unnecessary-copy-initialization
 
-REM Define advanced cleanup checks (performance, readability, modernization)
-set ADVANCED_CHECKS=performance-*,readability-redundant-*,modernize-redundant-*,bugprone-*
-
-REM Process files for advanced cleanup
-set FILES_ANALYZED=0
+REM Process each source file for core improvements
 for /r "modules" %%f in (*.cpp *.h) do (
-    set /a FILES_ANALYZED+=1
-    echo [!FILES_ANALYZED!/!SOURCE_FILE_COUNT!] Advanced analysis of %%~nxf...
+    set /a FILES_PROCESSED+=1
+    echo [!FILES_PROCESSED!/!SOURCE_FILE_COUNT!] Processing %%~nxf for const correctness...
     
     REM Force C++ mode for all files to avoid language detection issues
     REM Use -x c++ to explicitly tell clang-tidy to treat the file as C++
     set LANG_FLAGS=-x c++ -std=c++11
     if /i "%%~xf"==".c" set LANG_FLAGS=-x c -std=c99
     
-    REM Apply advanced fixes with proper include paths and explicit language mode
-    clang-tidy !TIDY_FLAGS! --checks="!ADVANCED_CHECKS!" "%%f" -- !LANG_FLAGS! !CLANG_INCLUDE_PATHS!
+    REM Apply core fixes with proper include paths and explicit language mode
+    clang-tidy !TIDY_FLAGS! --checks="!CORE_CHECKS!" "%%f" -- !LANG_FLAGS! !CLANG_INCLUDE_PATHS!
     if errorlevel 1 (
-        echo Warning: Advanced issues found in %%f
+        echo Warning: Issues found in %%f during core cleanup
         set /a ERROR_COUNT+=1
     )
 )
 
-echo Phase 5 completed - Advanced cleanup applied
+echo Phase 4 completed - Core improvements applied
 echo.
 
 REM ================================================================================
-REM STEP 11: Phase 6 - Final Quality Report
+REM STEP 8: Phase 5 - Modernization and Performance Fixes
 REM ================================================================================
 
 echo ================================================================================
-echo PHASE 6: Generating quality report...
+echo PHASE 5: Applying modernization and performance improvements...
+echo ================================================================================
+
+REM Define modernization and performance checks (excluding typedef and trailing return types)
+REM Exclude modernize-use-using to keep traditional typedef struct syntax
+REM Exclude modernize-use-trailing-return-type to keep traditional function syntax
+set MODERNIZATION_CHECKS=modernize-*,-modernize-use-using,-modernize-use-trailing-return-type,performance-*
+
+REM Process files for modernization and performance improvements
+set FILES_MODERNIZED=0
+for /r "modules" %%f in (*.cpp *.h) do (
+    set /a FILES_MODERNIZED+=1
+    echo [!FILES_MODERNIZED!/!SOURCE_FILE_COUNT!] Modernizing %%~nxf...
+    
+    REM Force C++ mode for all files to avoid language detection issues
+    REM Use -x c++ to explicitly tell clang-tidy to treat the file as C++
+    set LANG_FLAGS=-x c++ -std=c++11
+    if /i "%%~xf"==".c" set LANG_FLAGS=-x c -std=c99
+    
+    REM Apply modernization fixes with proper include paths and explicit language mode
+    clang-tidy !TIDY_FLAGS! --checks="!MODERNIZATION_CHECKS!" "%%f" -- !LANG_FLAGS! !CLANG_INCLUDE_PATHS!
+    if errorlevel 1 (
+        echo Warning: Modernization issues found in %%f
+        set /a ERROR_COUNT+=1
+    )
+)
+
+echo Phase 5 completed - Modernization and performance improvements applied
+echo.
+
+REM ================================================================================
+REM STEP 9: Phase 6 - Readability and Maintainability
+REM ================================================================================
+
+echo ================================================================================
+echo PHASE 6: Applying readability and maintainability improvements...
+echo ================================================================================
+
+REM Define readability and maintainability checks (preserve const qualifiers and C-style)
+REM Focus on readability without forcing modern C++ style conversions
+REM Exclude readability-avoid-const-params-in-decls to keep const qualifiers on parameters
+set READABILITY_CHECKS=readability-*,-readability-identifier-naming,-readability-avoid-const-params-in-decls,bugprone-*
+
+REM Process files for readability improvements
+set FILES_READABILITY=0
+for /r "modules" %%f in (*.cpp *.h) do (
+    set /a FILES_READABILITY+=1
+    echo [!FILES_READABILITY!/!SOURCE_FILE_COUNT!] Improving readability of %%~nxf...
+    
+    REM Force C++ mode for all files to avoid language detection issues
+    REM Use -x c++ to explicitly tell clang-tidy to treat the file as C++
+    set LANG_FLAGS=-x c++ -std=c++11
+    if /i "%%~xf"==".c" set LANG_FLAGS=-x c -std=c99
+    
+    REM Apply readability fixes with proper include paths and explicit language mode
+    clang-tidy !TIDY_FLAGS! --checks="!READABILITY_CHECKS!" "%%f" -- !LANG_FLAGS! !CLANG_INCLUDE_PATHS!
+    if errorlevel 1 (
+        echo Warning: Readability issues found in %%f
+        set /a ERROR_COUNT+=1
+    )
+)
+
+echo Phase 6 completed - Readability improvements applied
+echo.
+
+REM ================================================================================
+REM STEP 10: Phase 7 - Source Code Formatting
+REM ================================================================================
+
+echo ================================================================================
+echo PHASE 7: Applying source code formatting...
+echo ================================================================================
+
+REM Apply consistent formatting to all source files
+set FILES_FORMATTED=0
+for /r "modules" %%f in (*.cpp *.h) do (
+    set /a FILES_FORMATTED+=1
+    echo [!FILES_FORMATTED!/!SOURCE_FILE_COUNT!] Formatting %%~nxf...
+    
+    if "!DRY_RUN!"=="false" (
+        clang-format -i -style=file:config/.clang-format "%%f"
+        if errorlevel 1 (
+            echo Error formatting %%f
+            set /a ERROR_COUNT+=1
+        )
+    ) else (
+        REM In dry-run mode, just check formatting
+        clang-format --dry-run -Werror -style=file:config/.clang-format "%%f" >nul 2>&1
+        if errorlevel 1 (
+            echo Would reformat: %%f
+        )
+    )
+)
+
+echo Phase 7 completed - Source code formatting applied
+echo.
+
+REM ================================================================================
+REM STEP 11: Phase 8 - JSON File Formatting
+REM ================================================================================
+
+echo ================================================================================
+echo PHASE 8: Formatting JSON configuration files...
+echo ================================================================================
+
+REM Apply consistent formatting to all JSON files in the project
+echo Formatting JSON configuration files...
+
+if "!DRY_RUN!"=="true" (
+    echo Running JSON formatting in preview mode...
+    powershell.exe -ExecutionPolicy Bypass -File "scripts\format_json.ps1" -DryRun
+) else (
+    echo Applying JSON formatting...
+    powershell.exe -ExecutionPolicy Bypass -File "scripts\format_json.ps1"
+)
+
+if errorlevel 1 (
+    echo Warning: Issues found during JSON formatting
+    set /a ERROR_COUNT+=1
+) else (
+    echo JSON formatting completed successfully
+)
+
+echo Phase 8 completed - JSON formatting applied
+echo.
+
+REM ================================================================================
+REM STEP 12: Phase 9 - Final Quality Report
+REM ================================================================================
+
+echo ================================================================================
+echo PHASE 9: Generating quality report...
 echo ================================================================================
 
 REM Run comprehensive analysis for remaining issues (report only)
@@ -411,10 +448,11 @@ for /r "modules" %%f in (*.cpp *.h) do (
         set /a REMAINING_ISSUES+=!FILE_ISSUES!
     )
     del temp_count.txt 2>nul
-)
+echo Phase 9 completed - Quality report generated
+echo.
 
 REM ================================================================================
-REM STEP 12: Summary and Results
+REM STEP 13: Summary and Results
 REM ================================================================================
 
 echo.
@@ -449,12 +487,12 @@ if "!DRY_RUN!"=="false" (
 )
 
 REM ================================================================================
-REM STEP 13: Clean Build Artifacts
+REM STEP 14: Clean Build Artifacts
 REM ================================================================================
 
 echo.
 echo ================================================================================
-echo STEP 13: Cleaning build artifacts...
+echo STEP 14: Cleaning build artifacts...
 echo ================================================================================
 
 REM Remove all build artifacts and temporary files after processing is complete

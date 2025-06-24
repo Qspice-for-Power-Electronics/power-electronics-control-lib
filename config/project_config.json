@@ -32,9 +32,7 @@
 					"headers": [
 						"iir.h"
 					],
-					"dependencies": [
-
-					]
+					"dependencies": []
 				},
 				"bpwm": {
 					"path": "modules/power_electronics/pwm/bpwm",
@@ -44,9 +42,7 @@
 					"headers": [
 						"bpwm.h"
 					],
-					"dependencies": [
-
-					]
+					"dependencies": []
 				},
 				"epwm": {
 					"path": "modules/power_electronics/pwm/epwm",
@@ -56,9 +52,7 @@
 					"headers": [
 						"epwm.h"
 					],
-					"dependencies": [
-
-					]
+					"dependencies": []
 				}
 			}
 		},
@@ -70,9 +64,7 @@
 					"sources": [
 						"ctrl.cpp"
 					],
-					"headers": [
-
-					],
+					"headers": [],
 					"definition_file": "ctrl.def",
 					"dependencies": [
 						"bpwm",
@@ -140,27 +132,43 @@
 				]
 			}
 		}
-	},  "file_patterns": {
-	"source_files": [
-		"*.cpp"
-	],
-	"header_files": [
-		"*.h"
-	],
-	"definition_files": [
-		"*.def"
-	],
-	"config_files": [
-		"*.json"
-	],
-	"build_artifacts": [
-		"*.obj",
-		"*.dll",
-		"*.map",
-		"*.bak"
-	],
-	"backup_files": [
-		"*.bak"
-	]
-}
+	},
+	"file_patterns": {
+		"source_files": [
+			"*.cpp"
+		],
+		"header_files": [
+			"*.h"
+		],
+		"definition_files": [
+			"*.def"
+		],
+		"config_files": [
+			"*.json"
+		],
+		"build_artifacts": [
+			"*.obj",
+			"*.dll",
+			"*.map",
+			"*.bak"
+		],
+		"backup_files": [
+			"*.bak"
+		],
+		"all_files": [
+			"*.*"
+		]
+	},
+	"quality_assurance": {
+		"formatting": {
+			"enabled": true,
+			"format_on_build": true,
+			"preserve_line_endings": true
+		},
+		"static_analysis": {
+			"enabled": true,
+			"fail_on_errors": false,
+			"max_warnings": 100
+		}
+	}
 }
