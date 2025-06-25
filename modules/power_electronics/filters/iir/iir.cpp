@@ -6,6 +6,16 @@
  * @date    2025-06-01
  * Implements a configurable first-order IIR filter (lowpass/highpass).
  * @note    Designed for real-time signal processing applications.
+ *  
+ * S-Domain Transfer Functions:
+ * - Lowpass:  H(s) = ωc / (s + ωc)  where ωc = 2π * fc
+ * - Highpass: H(s) = s / (s + ωc)   where ωc = 2π * fc
+ * 
+ * Digital Implementation (Tustin/Bilinear Transform):
+ * - Filter coefficient: a = 1 / (1 + 2*fc*Ts)
+ * - Lowpass:  y[n] = a*u[n] + (1-a)*y[n-1]
+ * - Highpass: y[n] = a*(u[n] - u[n-1]) + (1-a)*y[n-1]
+ * 
  * @license This work is dedicated to the public domain under CC0 1.0.
  *          Please use it for good and beneficial purposes!
  ***************************************************************************/
