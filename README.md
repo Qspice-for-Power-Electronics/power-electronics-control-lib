@@ -34,36 +34,61 @@ A modular C++ library for power electronics control, designed for seamless QSPIC
 ```
 ├── modules/                    # All project modules
 │   ├── power_electronics/     # Core power electronics components
+│   │   ├── common/           # Shared constants and definitions
+│   │   │   └── math_constants.h
 │   │   ├── filters/          # Signal processing filters
 │   │   │   └── iir/         # IIR filter implementation
 │   │   │       ├── iir.h
 │   │   │       ├── iir.cpp
-│   │   │       ├── iir.def
-│   │   │       └── README.md
-│   │   └── pwm/             # PWM generation module
-│   │       ├── pwm.h
-│   │       ├── pwm.cpp
-│   │       ├── pwm.def
-│   │       └── README.md
-│   └── qspice_modules/       # QSPICE integration modules
-│       └── ctrl/            # Control module
-│           ├── ctrl.cpp
-│           ├── ctrl.def
-│           └── README.md
+│   │   │       └── iir.def
+│   │   └── pwm/             # PWM generation modules
+│   │       ├── bpwm/        # Basic PWM with phase shift
+│   │       │   ├── bpwm.h
+│   │       │   ├── bpwm.cpp
+│   │       │   └── bpwm.def
+│   │       └── epwm/        # Enhanced PWM with advanced features
+│   │           ├── epwm.h
+│   │           ├── epwm.cpp
+│   │           └── epwm.def
+│   ├── qspice_modules/        # QSPICE integration modules
+│   │   └── ctrl/             # Control module
+│   │       ├── ctrl.cpp
+│   │       └── ctrl.def
+│   └── templates/            # Module templates for rapid development
+│       ├── power_electronics_template/  # Template for power electronics modules
+│       │   ├── module.h
+│       │   ├── module.c
+│       │   ├── module.def
+│       │   └── TEMPLATE_USAGE.md
+│       └── qspice_template/  # Template for QSPICE modules
+│           ├── qspice_module.cpp
+│           ├── qspice_module.def
+│           └── TEMPLATE_USAGE.md
 ├── config/                    # Configuration files
 │   ├── .clang-format         # Code formatting rules
+│   ├── .clang-tidy          # Static analysis configuration
 │   └── project_config.json   # Centralized project configuration
 ├── scripts/                   # Build and utility scripts
 │   ├── build_all.bat         # Main build script
-│   ├── cleanup_code.bat      # Code quality improvement
-│   ├── project_config.py     # Configuration parser
-│   ├── project_config.bat    # Windows config wrapper
-│   ├── ProjectConfig.psm1    # PowerShell config module
+│   ├── project_cleanup.bat   # Comprehensive code cleanup and quality
+│   ├── setup_compiler.ps1    # Automatic Digital Mars Compiler installation
+│   ├── setup_compiler.bat    # Batch wrapper for compiler setup
+│   ├── add_macro_parentheses.ps1  # Macro safety improvements
+│   ├── update_dependencies.ps1    # Automatic dependency detection
+│   ├── format_json.ps1       # JSON/JSONC formatting utility
+│   ├── project_config.py     # Configuration parser (Python)
+│   ├── project_config.bat    # Configuration wrapper (Batch)
+│   ├── ProjectConfig.psm1    # Configuration module (PowerShell)
 │   └── README.md             # Scripts documentation
 ├── .vscode/                   # VS Code configuration
 │   ├── c_cpp_properties.json # IntelliSense settings
 │   └── tasks.json            # Build tasks
-└── build/                     # Build artifacts (auto-generated)
+├── .github/                   # CI/CD workflows
+│   └── workflows/
+│       └── ci.yml            # Continuous integration workflow
+├── build/                     # Build artifacts (auto-generated)
+├── logs/                      # Build and cleanup logs
+└── backup/                    # Automatic backups during cleanup
 ```
 
 ## Prerequisites
@@ -81,8 +106,8 @@ scripts\setup_compiler.bat
 
 **Option 2: Manual Installation**
 1. **Download and Install**
-   - Go to [Digital Mars GitHub repository](https://github.com/DigitalMars/dmc)
-   - Download the repository as ZIP or clone it
+   - Go to [Digital Mars Compiler](http://ftp.digitalmars.com/dmc.zip)
+   - Download it as ZIP
    - Extract to a directory like `C:\dm`
 
 2. **Add to PATH**
@@ -124,12 +149,20 @@ scripts\setup_compiler.bat
 # Build everything
 .\scripts\build_all.bat
 
-# Clean up code quality (preview first)
-.\scripts\cleanup_code.bat --dry-run
-.\scripts\cleanup_code.bat
+# Run comprehensive project cleanup and quality improvements
+.\scripts\project_cleanup.bat
+
+# Preview cleanup changes without modifying files  
+.\scripts\project_cleanup.bat --dry-run
 
 # View project configuration
 python scripts\project_config.py --summary
+
+# Update module dependencies automatically
+.\scripts\update_dependencies.ps1
+
+# Format JSON configuration files
+.\scripts\format_json.ps1
 ```
 
 ### Build System
@@ -159,36 +192,159 @@ Comprehensive build system for all project modules.
 
 ### Code Quality and Maintenance Scripts
 
-#### `scripts\cleanup_code.bat` - Comprehensive Code Cleanup
-Advanced code quality improvement tool with automatic fixes.
+#### `scripts\project_cleanup.bat` - Comprehensive Project Cleanup
+Advanced code cleanup and quality improvement tool with automatic fixes and dependency management.
 
 **Features:**
-- ✅ **Const Correctness:** Automatically adds `const` where appropriate
-- ✅ **Code Formatting:** Applies consistent style with clang-format
-- ✅ **Include Cleanup:** Removes unnecessary `#include` statements
-- ✅ **C++11 Modernization:** Updates code to modern C++ standards
-- ✅ **Performance Fixes:** Optimizes copy operations and move semantics
-- ✅ **Readability:** Improves variable names and code structure
-- ✅ **Dry-Run Mode:** Preview changes before applying
-- ✅ **Automatic Backups:** Saves original files before modification
+- ✅ **Build Artifact Cleanup**: Removes all build files and temporary objects
+- ✅ **Macro Safety**: Adds parentheses around `#define` values to prevent precedence issues
+- ✅ **Include Cleanup**: Removes unnecessary `#include` statements
+- ✅ **Dependency Updates**: Automatically scans and updates module dependencies
+- ✅ **Const Correctness**: Automatically adds `const` where appropriate
+- ✅ **Code Formatting**: Applies consistent style with clang-format
+- ✅ **C++11 Modernization**: Updates code to modern C++ standards
+- ✅ **Performance Fixes**: Optimizes copy operations and move semantics
+- ✅ **Readability**: Improves variable names and code structure
+- ✅ **JSON Formatting**: Formats configuration files consistently
+- ✅ **Quality Reporting**: Comprehensive analysis of remaining issues
+- ✅ **Dry-Run Mode**: Preview changes before applying
+- ✅ **Automatic Backups**: Saves original files before modification
 
 **Usage:**
 ```powershell
 # Preview changes without modifying files
-.\scripts\cleanup_code.bat --dry-run
+.\scripts\project_cleanup.bat --dry-run
 
-# Apply all automatic fixes
-.\scripts\cleanup_code.bat
+# Apply all automatic fixes and improvements
+.\scripts\project_cleanup.bat
 ```
+
+**Phase-by-Phase Processing:**
+1. **Phase 1**: Build artifact cleanup and validation
+2. **Phase 1.5**: Macro parentheses safety improvements  
+3. **Phase 2**: Include cleanup and optimization
+4. **Phase 3**: Automatic dependency detection and updates
+5. **Phase 4**: Const correctness and core improvements
+6. **Phase 5**: Modernization and performance fixes
+7. **Phase 6**: Readability and maintainability improvements
+8. **Phase 7**: Code formatting with clang-format
+9. **Phase 8**: JSON configuration file formatting
+10. **Phase 9**: Comprehensive quality reporting
+11. **Phase 10**: Final cleanup of build artifacts
 
 **Requirements:**
 - LLVM/Clang tools (clang-format, clang-tidy)
-- Project must be built (runs build automatically if needed)
+- Digital Mars Compiler (dmc)
+- PowerShell 5.0+ for advanced features
 
 **Output:**
 - Modified source files with fixes applied
 - Backup files in `backup/` directory
+- Updated `project_config.json` with accurate dependencies
 - Detailed quality report showing remaining issues
+- Comprehensive logs in `logs/` directory
+
+#### `scripts\add_macro_parentheses.ps1` - Macro Safety Utility
+Standalone PowerShell script for adding parentheses around `#define` values.
+
+**Features:**
+- ✅ Scans all C/C++ source and header files
+- ✅ Adds parentheses around macro values that don't already have them
+- ✅ Preserves existing parentheses and string literals
+- ✅ Skips header guards and special macros
+- ✅ Dry-run mode for safe preview
+- ✅ Detailed change reporting
+
+**Usage:**
+```powershell
+# Preview changes without modifying files
+.\scripts\add_macro_parentheses.ps1 -DryRun
+
+# Apply parentheses fixes
+.\scripts\add_macro_parentheses.ps1
+```
+
+**Example Transformations:**
+```cpp
+// Before:
+#define FREQ_50HZ  50.0f
+#define CALC_POWER voltage * current
+
+// After:  
+#define FREQ_50HZ  (50.0f)
+#define CALC_POWER (voltage * current)
+```
+
+#### `scripts\update_dependencies.ps1` - Automatic Dependency Management
+PowerShell script that automatically detects and updates module dependencies by scanning `#include` statements.
+
+**Features:**
+- ✅ Scans all source files for `#include "header.h"` statements
+- ✅ Maps header files to their corresponding modules
+- ✅ Updates `dependencies` arrays in `project_config.json`
+- ✅ Validates dependency cycles and reports conflicts
+- ✅ Dry-run mode for safe preview
+- ✅ Verbose logging for debugging
+
+**Usage:**
+```powershell
+# Preview dependency changes
+.\scripts\update_dependencies.ps1 -DryRun
+
+# Update dependencies automatically
+.\scripts\update_dependencies.ps1
+
+# Enable detailed logging
+.\scripts\update_dependencies.ps1 -Verbose
+```
+
+**Detection Logic:**
+- Scans for `#include "module.h"` statements (local includes)
+- Excludes system headers and STL includes
+- Handles both relative and absolute include paths
+- Updates build order based on dependency relationships
+
+#### `scripts\format_json.ps1` - JSON Configuration Formatter
+PowerShell utility for formatting JSON and JSONC files with consistent indentation.
+
+**Features:**
+- ✅ Formats JSON files in `config/` and `.vscode/` directories
+- ✅ Preserves comments in JSONC files
+- ✅ Consistent tab indentation throughout
+- ✅ Maintains all data while improving readability
+- ✅ Dry-run mode for preview
+
+**Usage:**
+```powershell
+# Preview formatting changes
+.\scripts\format_json.ps1 -DryRun
+
+# Apply formatting to all JSON files
+.\scripts\format_json.ps1
+```
+
+#### `scripts\setup_compiler.ps1` - Automatic Compiler Installation
+PowerShell script for automatic Digital Mars Compiler installation and configuration.
+
+**Features:**
+- ✅ Downloads DMC from official GitHub repository
+- ✅ Handles extraction and proper directory structure
+- ✅ Adds compiler to system PATH automatically
+- ✅ Verifies existing installations
+- ✅ Force re-download option available
+- ✅ Quiet mode for CI/CD environments
+
+**Usage:**
+```powershell
+# Interactive installation
+.\scripts\setup_compiler.ps1
+
+# Quiet installation for automation
+.\scripts\setup_compiler.ps1 -Quiet
+
+# Force re-download even if already installed
+.\scripts\setup_compiler.ps1 -Force
+```
 
 ### Project Configuration System
 
@@ -270,9 +426,8 @@ The project includes VS Code tasks for seamless development:
 
 **Available Tasks** (Ctrl+Shift+P → "Tasks: Run Task"):
 1. **Setup Compiler** - Automatically download and install Digital Mars Compiler
-2. **Clean Build Artifacts** - Remove all build files and temporary objects
-3. **Code Cleanup** - Run comprehensive code quality improvements
-4. **Build All Modules** - Compile all modules (Default: Ctrl+Shift+B)
+2. **Project Cleanup** - Run comprehensive project cleanup including build artifacts, const correctness, and formatting
+3. **Build All Modules** - Compile all modules (Default: Ctrl+Shift+B)
 
 **IntelliSense Configuration:**
 - Automatic C++ code completion with local compiler headers
@@ -280,24 +435,48 @@ The project includes VS Code tasks for seamless development:
 - Include path resolution for all modules and DMC system headers
 - No external dependencies required
 
+### Continuous Integration
+
+The project includes GitHub Actions workflow for automated building and testing:
+
+**CI Features:**
+- ✅ Automatic Digital Mars Compiler installation
+- ✅ Build verification for all modules
+- ✅ DLL output validation against project configuration
+- ✅ Cross-platform Windows environment testing
+- ✅ Configuration-driven expected output validation
+
+**Workflow Triggers:**
+- Push to `master` branch
+- Pull requests to `master` branch
+
+**CI Configuration:** `.github/workflows/ci.yml`
+
 ### Workflow Recommendations
 
 #### Daily Development
 1. **Code normally** in VS Code with IntelliSense
-2. **Build frequently:** `Ctrl+Shift+B` or `.\build_all.bat`
+2. **Build frequently:** `Ctrl+Shift+B` or `.\scripts\build_all.bat`
 3. **Test in QSPICE** using generated DLL files
 
 #### Before Committing
-1. **Preview cleanup:** `.\scripts\cleanup_code.bat --dry-run`
-2. **Apply fixes:** `.\scripts\cleanup_code.bat`
-3. **Build and test:** `.\build_all.bat`
+1. **Preview cleanup:** `.\scripts\project_cleanup.bat --dry-run`
+2. **Apply fixes:** `.\scripts\project_cleanup.bat`
+3. **Build and test:** `.\scripts\build_all.bat`
 4. **Review changes:** `git diff`
 5. **Commit:** Clean, formatted, and quality-checked code
 
 #### Adding New Modules
-1. **Update configuration:** Edit `config\project_config.json`
-2. **Create files:** Follow existing module structure
-3. **Build automatically:** Configuration system handles the rest
+1. **Use templates:** Copy from `modules/templates/` for quick start
+2. **Update configuration:** Edit `config\project_config.json` or use auto-detection
+3. **Update dependencies:** Run `.\scripts\update_dependencies.ps1`
+4. **Build automatically:** Configuration system handles the rest
+
+#### Maintaining Code Quality
+1. **Regular cleanup:** Run `.\scripts\project_cleanup.bat` periodically
+2. **Monitor logs:** Check `logs/` directory for detailed analysis
+3. **Review backups:** Check `backup/` directory before major changes
+4. **Validate dependencies:** Use `.\scripts\update_dependencies.ps1 -Verbose`
 
 ## Building
 ## Quick Build
@@ -312,18 +491,61 @@ This will automatically:
 - Run code quality checks  
 - Build power electronics modules
 - Build QSPICE modules with dependencies
-- Create DLLs in root directory for QSPICE
+- Create DLLs in build directory for QSPICE
 
 See the **Building and Development Tools** section above for detailed information about all available tools and workflows.
 
 ## Adding New Modules
+
+The project provides multiple approaches for creating new modules with comprehensive template support and automatic configuration management.
+
+### Quick Start with Templates
+
+The project includes ready-to-use templates for rapid module development:
+
+#### Using Power Electronics Template
+```powershell
+# 1. Copy the template
+Copy-Item -Recurse "modules\templates\power_electronics_template" "modules\power_electronics\your_module_name"
+
+# 2. Rename files
+cd "modules\power_electronics\your_module_name"
+Rename-Item "module.h" "your_module_name.h"
+Rename-Item "module.c" "your_module_name.cpp"
+Rename-Item "module.def" "your_module_name.def"
+
+# 3. Replace template markers
+# Search and replace all [REPLACE: ...] markers with your specific content
+
+# 4. Update dependencies automatically
+.\scripts\update_dependencies.ps1
+
+# 5. Build and test
+.\scripts\build_all.bat
+```
+
+#### Using QSPICE Template
+```powershell
+# 1. Copy the template
+Copy-Item -Recurse "modules\templates\qspice_template" "modules\qspice_modules\your_module"
+
+# 2. Customize for your needs
+# Edit files and replace template markers
+
+# 3. Update configuration and build
+.\scripts\update_dependencies.ps1
+.\scripts\build_all.bat
+```
+
+### Configuration Options
 
 The project uses a centralized configuration system in `config/project_config.json`. When adding modules, you have two options:
 
 ### Option A: Automatic Detection (Recommended)
 1. **Create module structure following existing patterns**
 2. **Build automatically** - the system will detect new modules
-3. **Update configuration** if you want explicit control
+3. **Update dependencies** - run `.\scripts\update_dependencies.ps1`
+4. **Update configuration** if you want explicit control
 
 ### Option B: Explicit Configuration  
 1. **Update `config/project_config.json`** with new module details
@@ -394,9 +616,16 @@ QSPICE modules are the final DLL outputs used in QSPICE simulations.
 
 ### Module Guidelines
 
+**Template Usage:**
+- **Recommended:** Start with templates from `modules/templates/` 
+- **Power Electronics:** Use `power_electronics_template/` for reusable components
+- **QSPICE Integration:** Use `qspice_template/` for simulation modules
+- **Documentation:** Each template includes comprehensive usage guides
+
 **Configuration Management:**
 - **Preferred:** Update `config/project_config.json` for explicit control
 - **Alternative:** Follow naming patterns for automatic detection
+- **Dependencies:** Use `.\scripts\update_dependencies.ps1` for automatic updates
 - Use configuration system for complex dependencies
 
 **File Naming:**
@@ -408,9 +637,11 @@ QSPICE modules are the final DLL outputs used in QSPICE simulations.
 - Include necessary headers from power electronics modules
 - Export functions in `.def` files for proper linking
 - Follow existing examples for QSPICE interface patterns
+- Use templates to ensure MISRA C compliance and best practices
 - Dependencies automatically resolved via configuration
 
 **Documentation:**
+- Templates include comprehensive documentation templates
 - Add README.md explaining module purpose and usage
 - Document function parameters and return values  
 - Include example usage if applicable
@@ -424,19 +655,28 @@ python scripts\project_config.py --summary
 # Check include paths
 python scripts\project_config.py --include-paths
 
+# Update and verify dependencies  
+.\scripts\update_dependencies.ps1 -Verbose
+
 # Verify QSPICE modules  
 python scripts\project_config.py --qspice-modules
+
+# Run comprehensive quality check
+.\scripts\project_cleanup.bat --dry-run
 ```
 
 ## Modules
 
 ### Power Electronics
 - **IIR Filter** (`modules/power_electronics/filters/iir/`)
-  - Digital IIR filtering implementation
+  - Digital IIR filtering implementation for signal processing
   
 - **PWM Modules** (`modules/power_electronics/pwm/`)
   - **BPWM Module** (`modules/power_electronics/pwm/bpwm/`) - Basic PWM generation with phase shift capabilities
   - **EPWM Module** (`modules/power_electronics/pwm/epwm/`) - Enhanced PWM with center-aligned counter support, dead time, and advanced action modes
+
+- **Common Definitions** (`modules/power_electronics/common/`)
+  - **Math Constants** (`modules/power_electronics/common/math_constants.h`) - Shared mathematical constants and definitions
 
 ### QSPICE Modules
 - **Control Module** (`modules/qspice_modules/ctrl/`)
@@ -444,16 +684,44 @@ python scripts\project_config.py --qspice-modules
   - Each QSPICE module is self-contained in its folder
   - Automatically detected and built by build script
 
+### Templates
+- **Power Electronics Template** (`modules/templates/power_electronics_template/`)
+  - Complete template for creating reusable power electronics modules
+  - MISRA C:2012 compliant implementation
+  - Includes comprehensive usage guide and examples
+  
+- **QSPICE Template** (`modules/templates/qspice_template/`)
+  - Template for creating QSPICE integration modules
+  - Complete interface examples and documentation
+
 ## Development
 
 ### Code Style
 - Automatic formatting with clang-format
 - Configuration in `config/.clang-format`
+- Static analysis with clang-tidy (config in `config/.clang-tidy`)
+- Comprehensive quality checks via `.\scripts\project_cleanup.bat`
 
 ### Module Structure
 - Keep modules self-contained in their directories
-- Include README.md in each module folder
+- Use provided templates for consistency and best practices
+- Include comprehensive documentation in each module folder
 - Follow existing naming conventions
+- Use automatic dependency detection for accurate build order
+
+### Quality Assurance
+- **Macro Safety**: Automatic parentheses around `#define` values
+- **MISRA C Compliance**: Templates enforce embedded programming standards
+- **Const Correctness**: Automatic detection and correction
+- **Modern C++**: Selective C++11 improvements while maintaining compatibility
+- **Performance**: Optimization for real-time applications
+- **Documentation**: Comprehensive inline and external documentation
+
+### Project Maintenance
+- **Logs**: Detailed build and cleanup logs in `logs/` directory
+- **Backups**: Automatic backups during cleanup operations in `backup/` directory
+- **Dependencies**: Automatic detection and updates of module dependencies
+- **Configuration**: Centralized management via `config/project_config.json`
 
 ## License
 

@@ -3,6 +3,16 @@
 ## Overview
 This template provides a standardized structure for creating reusable power electronics modules that can be used across multiple QSPICE simulations.
 
+## Features
+- MISRA C:2012 compliant implementation
+- Configurable parameters
+- State management with reset capability
+- Real-time processing capability
+- Simple void function interface
+- Direct input parameters to step function
+- C-compatible interface optimized for microcontrollers
+- Minimal memory footprint
+
 ## Template Structure
 ```
 power_electronics_template/
@@ -10,7 +20,6 @@ power_electronics_template/
 ├── module.c                    # Implementation file
 ├── module.def                  # Module definition for DLL creation
 ├── qspice_module_template.cpp  # QSPICE integration example
-├── README.md                   # Module documentation template
 └── TEMPLATE_USAGE.md          # This usage guide
 ```
 
@@ -115,7 +124,6 @@ Use the included `qspice_module_template.cpp` as a starting point for creating Q
 
 ## Best Practices
 
-- **Documentation**: Update README.md with module-specific information
 - **Testing**: Create unit tests for critical functionality
 - **Dependencies**: Minimize external dependencies
 - **Performance**: Optimize for real-time execution

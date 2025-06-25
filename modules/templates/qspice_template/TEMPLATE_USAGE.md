@@ -3,12 +3,21 @@
 ## Overview
 This template provides a standardized structure for creating QSPICE integration modules that use power electronics components from the project library.
 
+## Features
+- MISRA C:2012 compliant implementation
+- Configurable parameters
+- State management with reset capability
+- Real-time processing capability
+- Simple void function interface
+- Direct input parameters to step function
+- C-compatible interface optimized for microcontrollers
+- Minimal memory footprint
+
 ## Template Structure
 ```
 qspice_template/
 ├── qspice_module.cpp     # Main QSPICE integration implementation
 ├── qspice_module.def     # DLL export definition file
-├── README.md             # Module documentation template
 └── TEMPLATE_USAGE.md     # This usage guide
 ```
 
@@ -259,7 +268,6 @@ output = output_state ? 1.0f : 0.0f;
 - Separate initialization from runtime logic
 
 ### Documentation
-- Update README.md with actual pin descriptions
 - Document parameter ranges and units
 - Include typical use cases and examples
 - Maintain version history
@@ -274,4 +282,5 @@ output = output_state ? 1.0f : 0.0f;
 - **Examples**: Study existing modules in `modules/qspice_modules/`
 - **Build system**: Check `scripts/project_config.py --help`
 - **Power electronics**: Review modules in `modules/power_electronics/`
+- Review project documentation in main `README.md`
 - **QSPICE docs**: Refer to QSPICE documentation for interface details
