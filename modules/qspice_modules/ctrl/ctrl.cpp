@@ -197,9 +197,11 @@ extern "C" __declspec(dllexport) void ctrl(void** opaque, double t, union uData*
             .gate_off_voltage  = 0.0F,
             .sync_enable       = false,
             .phase_offset      = 0.0F,
-            .dead_time_rising  = 400e-9F,  // 200ns rising dead time
-            .dead_time_falling = 100e-9F   // 150ns falling dead time
-        };  // ePWM1 (Master): No phase offset
+            .dead_time_rising  = 100e-9F,  // 100ns rising dead time
+            .dead_time_falling = 100e-9F   // 100ns falling dead time
+        };
+
+        // ePWM1 (Master): No phase offset
         epwm_init(&epwm1, &base_epwm_params);  // ePWM2: 90° phase shift (quarter period)
         epwm_params_t epwm2_params = base_epwm_params;
         epwm2_params.sync_enable   = true;

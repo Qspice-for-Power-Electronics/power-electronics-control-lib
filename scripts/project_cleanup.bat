@@ -243,9 +243,9 @@ REM Also add system include paths that clang-tidy might need
 set CLANG_INCLUDE_PATHS=!CLANG_INCLUDE_PATHS! -isystem compiler\include
 
 if "!DRY_RUN!"=="true" (
-    set TIDY_FLAGS=--format-style=file --quiet
+    set TIDY_FLAGS=--format-style=file
 ) else (
-    set TIDY_FLAGS=--format-style=file --fix --fix-errors --quiet
+    set TIDY_FLAGS=--format-style=file --fix --fix-errors
 )
 
 REM Define include cleanup checks to remove unnecessary headers
@@ -263,11 +263,17 @@ for /r "modules" %%f in (*.cpp *.h) do (
     if /i "%%~xf"==".c" set LANG_FLAGS=-x c -std=c99
     
     REM Apply include cleanup with proper include paths and explicit language mode
-    clang-tidy !TIDY_FLAGS! --checks="!INCLUDE_CLEANUP_CHECKS!" "%%f" -- !LANG_FLAGS! !CLANG_INCLUDE_PATHS!
+    clang-tidy !TIDY_FLAGS! --checks="!INCLUDE_CLEANUP_CHECKS!" "%%f" -- !LANG_FLAGS! !CLANG_INCLUDE_PATHS! >temp_clang_output.txt 2>&1
     if errorlevel 1 (
         call :log "Warning: Include cleanup issues found in %%f"
+        call :log "--- Detailed Error Output ---"
+        for /f "usebackq delims=" %%l in ("temp_clang_output.txt") do (
+            call :log "  %%l"
+        )
+        call :log "--- End Error Output ---"
         set /a ERROR_COUNT+=1
     )
+    del temp_clang_output.txt 2>nul
 )
 
 call :log "Phase 2 completed - Include cleanup applied"
@@ -324,11 +330,17 @@ for /r "modules" %%f in (*.cpp *.h) do (
     if /i "%%~xf"==".c" set LANG_FLAGS=-x c -std=c99
     
     REM Apply core fixes with proper include paths and explicit language mode
-    clang-tidy !TIDY_FLAGS! --checks="!CORE_CHECKS!" "%%f" -- !LANG_FLAGS! !CLANG_INCLUDE_PATHS!
+    clang-tidy !TIDY_FLAGS! --checks="!CORE_CHECKS!" "%%f" -- !LANG_FLAGS! !CLANG_INCLUDE_PATHS! >temp_clang_output.txt 2>&1
     if errorlevel 1 (
         call :log "Warning: Issues found in %%f during core cleanup"
+        call :log "--- Detailed Error Output ---"
+        for /f "usebackq delims=" %%l in ("temp_clang_output.txt") do (
+            call :log "  %%l"
+        )
+        call :log "--- End Error Output ---"
         set /a ERROR_COUNT+=1
     )
+    del temp_clang_output.txt 2>nul
 )
 
 call :log "Phase 4 completed - Core improvements applied"
@@ -345,7 +357,8 @@ call :log "=====================================================================
 REM Define modernization and performance checks (excluding typedef and trailing return types)
 REM Exclude modernize-use-using to keep traditional typedef struct syntax
 REM Exclude modernize-use-trailing-return-type to keep traditional function syntax
-set MODERNIZATION_CHECKS=modernize-*,-modernize-use-using,-modernize-use-trailing-return-type,performance-*
+REM Exclude modernize-deprecated-headers to preserve C-style headers like math.h
+set MODERNIZATION_CHECKS=modernize-*,-modernize-use-using,-modernize-use-trailing-return-type,-modernize-deprecated-headers,performance-*
 
 REM Process files for modernization and performance improvements
 set FILES_MODERNIZED=0
@@ -359,11 +372,17 @@ for /r "modules" %%f in (*.cpp *.h) do (
     if /i "%%~xf"==".c" set LANG_FLAGS=-x c -std=c99
     
     REM Apply modernization fixes with proper include paths and explicit language mode
-    clang-tidy !TIDY_FLAGS! --checks="!MODERNIZATION_CHECKS!" "%%f" -- !LANG_FLAGS! !CLANG_INCLUDE_PATHS!
+    clang-tidy !TIDY_FLAGS! --checks="!MODERNIZATION_CHECKS!" "%%f" -- !LANG_FLAGS! !CLANG_INCLUDE_PATHS! >temp_clang_output.txt 2>&1
     if errorlevel 1 (
         call :log "Warning: Modernization issues found in %%f"
+        call :log "--- Detailed Error Output ---"
+        for /f "usebackq delims=" %%l in ("temp_clang_output.txt") do (
+            call :log "  %%l"
+        )
+        call :log "--- End Error Output ---"
         set /a ERROR_COUNT+=1
     )
+    del temp_clang_output.txt 2>nul
 )
 
 call :log "Phase 5 completed - Modernization and performance improvements applied"
@@ -394,11 +413,17 @@ for /r "modules" %%f in (*.cpp *.h) do (
     if /i "%%~xf"==".c" set LANG_FLAGS=-x c -std=c99
     
     REM Apply readability fixes with proper include paths and explicit language mode
-    clang-tidy !TIDY_FLAGS! --checks="!READABILITY_CHECKS!" "%%f" -- !LANG_FLAGS! !CLANG_INCLUDE_PATHS!
+    clang-tidy !TIDY_FLAGS! --checks="!READABILITY_CHECKS!" "%%f" -- !LANG_FLAGS! !CLANG_INCLUDE_PATHS! >temp_clang_output.txt 2>&1
     if errorlevel 1 (
         call :log "Warning: Readability issues found in %%f"
+        call :log "--- Detailed Error Output ---"
+        for /f "usebackq delims=" %%l in ("temp_clang_output.txt") do (
+            call :log "  %%l"
+        )
+        call :log "--- End Error Output ---"
         set /a ERROR_COUNT+=1
     )
+    del temp_clang_output.txt 2>nul
 )
 
 call :log "Phase 6 completed - Readability improvements applied"
@@ -484,13 +509,23 @@ for /r "modules" %%f in (*.cpp *.h) do (
     if /i "%%~xf"==".c" set LANG_FLAGS=-x c -std=c99
     
     REM Count remaining issues (don't fix, just report) with proper include paths and explicit language mode
-    clang-tidy --quiet --checks="-*,clang-diagnostic-*,clang-analyzer-*,cert-*,misc-*,readability-*,performance-*,bugprone-*,modernize-*,portability-*" "%%f" -- !LANG_FLAGS! !CLANG_INCLUDE_PATHS! 2>nul | find /c "warning:" >temp_count.txt
+    clang-tidy --checks="-*,clang-diagnostic-*,clang-analyzer-*,cert-*,misc-*,readability-*,performance-*,bugprone-*,modernize-*,portability-*" "%%f" -- !LANG_FLAGS! !CLANG_INCLUDE_PATHS! >temp_issues.txt 2>&1
+    
+    REM Count warnings in the output
+    find /c "warning:" temp_issues.txt >temp_count.txt 2>nul
     set /p FILE_ISSUES=<temp_count.txt
     if !FILE_ISSUES! gtr 0 (
         call :log "  %%~nxf: !FILE_ISSUES! remaining issues"
+        call :log "    --- Issue Details ---"
+        for /f "usebackq delims=" %%l in ("temp_issues.txt") do (
+            echo %%l | find "warning:" >nul && call :log "    %%l"
+            echo %%l | find "error:" >nul && call :log "    %%l"
+        )
+        call :log "    --- End Issue Details ---"
         set /a REMAINING_ISSUES+=!FILE_ISSUES!
     )
     del temp_count.txt 2>nul
+    del temp_issues.txt 2>nul
 )
 
 call :log "Phase 9 completed - Quality report generated"
