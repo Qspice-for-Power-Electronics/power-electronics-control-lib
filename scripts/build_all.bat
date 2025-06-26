@@ -23,8 +23,9 @@ REM 1. Validates required tools (DMC compiler, clang-format)
 REM 2. Cleans previous build artifacts
 REM 3. Formats all source code using clang-format
 REM 4. Compiles power electronics modules (shared components)
-REM 5. Compiles and links each QSPICE module into its own DLL
-REM 6. Copies final DLLs to root directory for QSPICE usage
+REM 5. Builds individual DLL files for each power electronics module
+REM 6. Compiles and links each QSPICE module into its own DLL
+REM 7. Copies final DLLs to root directory for QSPICE usage
 REM
 REM REQUIREMENTS:
 REM - Digital Mars C++ Compiler (dmc) in PATH
@@ -38,6 +39,7 @@ REM - Restart VS Code completely after running "Setup Compiler" task
 REM - The setup script modifies system PATH which requires VS Code restart
 REM
 REM OUTPUT:
+REM - Individual DLL files for each power electronics module (e.g., iir.dll, bpwm.dll, epwm.dll)
 REM - Individual DLL files for each QSPICE module (e.g., ctrl.dll)
 REM - Build artifacts in build/ directory
 REM
@@ -199,10 +201,43 @@ for /r "..\modules\power_electronics" %%f in (*.cpp) do (
 )
 
 REM ================================================================================
-REM STEP 7: Build Individual QSPICE Modules
+REM STEP 7: Build Individual Power Electronics Module DLLs
 REM ================================================================================
 
-REM Process each QSPICE module found in qspice_modules directory
+REM Build separate DLLs for each power electronics module (iir.dll, bpwm.dll, epwm.dll)
+echo Building individual power electronics module DLLs...
+for /r "..\modules\power_electronics" %%d in (*.def) do (
+    if exist "%%~dpd%%~nd.cpp" (
+        set MODULE_NAME=%%~nd
+        echo Processing power electronics module: !MODULE_NAME!
+        
+        REM Compile the specific module's source file
+        echo Compiling !MODULE_NAME!.cpp
+        dmc !COMPILE_FLAGS! -c "%%~dpd!MODULE_NAME!.cpp"
+        if errorlevel 1 (
+            echo Error compiling !MODULE_NAME!.cpp
+            set /a ERROR_COUNT+=1
+        ) else (
+            REM Copy module definition file to build directory for linking
+            copy /Y "%%d" . > nul
+            echo Linking !MODULE_NAME!.dll...
+            REM Link the module's object file into its own DLL
+            link !MODULE_NAME!.obj,!MODULE_NAME!.dll,nul,kernel32+user32,!MODULE_NAME!/noi;
+            if errorlevel 1 (
+                echo Error linking !MODULE_NAME!.dll
+                set /a ERROR_COUNT+=1
+            ) else (
+                echo Successfully built !MODULE_NAME!.dll
+            )
+        )
+    )
+)
+
+REM ================================================================================
+REM STEP 8: Build Combined QSPICE Modules
+REM ================================================================================
+
+REM Process each QSPICE module found in qspice_modules directory (existing functionality)
 for /d %%m in (..\modules\qspice_modules\*) do (
     if exist "%%m\%%~nxm.def" (
         echo Processing QSPICE module: %%~nxm
@@ -244,7 +279,7 @@ for /d %%m in (..\modules\qspice_modules\*) do (
 )
 
 REM ================================================================================
-REM STEP 8: Finalize Build and Report Results
+REM STEP 9: Finalize Build and Report Results
 REM ================================================================================
 
 REM Return to original directory
