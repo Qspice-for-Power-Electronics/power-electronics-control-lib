@@ -56,8 +56,8 @@ static inline void clear_outputs(cpwm_outputs_t* const p_outputs, const float ga
  */
 static void calculate_counter_state(cpwm_t* const p_cpwm, const float t)
 {
-    /* Phase offset is applied to the carrier itself - optimized with pre-computed inv_Ts */
-    float const carrier_raw = (t + p_cpwm->params.phase_offset) * p_cpwm->params.inv_Ts;
+    /* Phase offset is applied to the carrier itself */
+    float const carrier_raw = (t + p_cpwm->params.phase_offset) * p_cpwm->params.Fs;
     float const carrier_mod = carrier_raw - floorf(carrier_raw);
 
     /* Generate center-aligned (triangular) carrier */
@@ -74,7 +74,7 @@ static void calculate_counter_state(cpwm_t* const p_cpwm, const float t)
 static void apply_dead_time(cpwm_t* const p_cpwm)
 {
     /* Convert dead time to normalized units */
-    p_cpwm->state.dead_time_norm = p_cpwm->params.dead_time * p_cpwm->params.inv_Ts;
+    p_cpwm->state.dead_time_norm = p_cpwm->params.dead_time * p_cpwm->params.Fs;
 }
 
 /**
@@ -142,8 +142,7 @@ static void process_pwm_actions(cpwm_t* const p_cpwm, const float cmp)
  */
 void cpwm_init(cpwm_t* const p_cpwm, const cpwm_params_t* const p_params)
 {
-    p_cpwm->params.Ts               = p_params->Ts;
-    p_cpwm->params.inv_Ts           = 1.0F / p_cpwm->params.Ts;
+    p_cpwm->params.Fs               = p_params->Fs;
     p_cpwm->params.gate_on_voltage  = p_params->gate_on_voltage;
     p_cpwm->params.gate_off_voltage = p_params->gate_off_voltage;
     p_cpwm->params.sync_enable      = p_params->sync_enable;

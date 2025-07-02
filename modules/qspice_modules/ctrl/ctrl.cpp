@@ -1,19 +1,18 @@
 /**
  * *************************** In The Name Of God ***************************
  * @file    ctrl.cpp
- * @brief   Example controller for modular digital PWM implementation
+ * @brief   Controller using 5 CPWM modules for PWM generation and timing
  * @author  Dr.-Ing. Hossein Abedini
- * @date    2025-06-01
- * Example usage of the PwmModule for generating phase-shifted PWM signals.
+ * @date    2025-07-02
+ * Implementation using 5 CPWM modules: 1 for digital controller timing,
+ * and 4 for test PWM generation without synchronization.
  * @note    Designed for real-time signal processing applications.
  * @license This work is dedicated to the public domain under CC0 1.0.
  *          Please use it for good and beneficial purposes!
  ***************************************************************************/
 
 /********************************* INCLUDES **********************************/
-#include "bpwm.h"
-#include "epwm.h"
-#include "iir.h"
+#include "cpwm.h"
 
 /***************************** TYPE DEFINITIONS ******************************/
 
@@ -172,130 +171,100 @@ extern "C" __declspec(dllexport) void ctrl(void** opaque, double t, union uData*
     (void)I_dc;
 
     // Module initialization code
-    static bpwm_t bpwm_mod;
-    static iir_t  lpf;
-    // Add four ePWM modules
-    static epwm_t epwm1;
-    static epwm_t epwm2;
-    static epwm_t epwm3;
-    static epwm_t epwm4;
+    static cpwm_t cpwm_clk;   // Clock generator CPWM
+    static cpwm_t cpwm1;      // Test CPWM 1
+    static cpwm_t cpwm2;      // Test CPWM 2
+    static cpwm_t cpwm3;      // Test CPWM 3
+    static cpwm_t cpwm4;      // Test CPWM 4
     static bool   mod_initialized = false;
     if (!mod_initialized)
     {
-        // Initialize BPWM module (original)
-        bpwm_params_t const bpwm_params = {10e-6F, BPWM_CARRIER_CENTER_ALIGNED, 15.0F,
-                                           0.0F};  // Ts, carrier_select, gate_on_voltage, gate_off_voltage
-        bpwm_init(&bpwm_mod, &bpwm_params);
-
-        // Initialize IIR filter
-        iir_params_t const lpf_params = {1e-4F, 100.0F, IIR_LOWPASS, 0.0F};  // Ts, fc, type=lowpass, a=auto
-        iir_init(&lpf, &lpf_params);                                         // Initialize ePWM modules        // Common ePWM parameters
-        epwm_params_t const base_epwm_params = {
-            .Ts                = 10e-6F,  // 10µs sampling time (equivalent to 100kHz carrier)
-            .pwm_mode          = EPWM_MODE_ACTIVE_HIGH_CMPA_FIRST,
-            .gate_on_voltage   = 1.0F,
-            .gate_off_voltage  = 0.0F,
-            .sync_enable       = false,
-            .phase_offset      = 0.0F,
-            .dead_time_rising  = 100e-9F,  // 100ns rising dead time
-            .dead_time_falling = 100e-9F   // 100ns falling dead time
+        // Initialize clock generator CPWM (for digital controller timing)
+        cpwm_params_t const cpwm_clk_params = {
+            .Fs               = 50000.0F,  // 50kHz frequency
+            .gate_on_voltage  = 0.0F,
+            .gate_off_voltage = 0.0F,
+            .sync_enable      = false,
+            .phase_offset     = 0.0F,
+            .dead_time        = 0.0F  // 0ns dead time
         };
+        cpwm_init(&cpwm_clk, &cpwm_clk_params);
 
-        // ePWM1 (Master): No phase offset
-        epwm_init(&epwm1, &base_epwm_params);  // ePWM2: 90° phase shift (quarter period)
-        epwm_params_t epwm2_params = base_epwm_params;
-        epwm2_params.sync_enable   = false;
-        epwm2_params.phase_offset  = 0.25F * base_epwm_params.Ts;  // 90° phase shift (quarter period)
-        epwm_init(&epwm2, &epwm2_params);
-
-        // ePWM3: 180° phase shift (half period)
-        epwm_params_t epwm3_params = base_epwm_params;
-        epwm3_params.sync_enable   = false;
-        epwm3_params.phase_offset  = 0.5F * base_epwm_params.Ts;  // 180° phase shift (half period)
-        epwm_init(&epwm3, &epwm3_params);
-
-        // ePWM4: 270° phase shift (three-quarter period)
-        epwm_params_t epwm4_params = base_epwm_params;
-        epwm4_params.sync_enable   = false;
-        epwm4_params.phase_offset  = 0.75F * base_epwm_params.Ts;  // 270° phase shift
-        epwm_init(&epwm4, &epwm4_params);
+        // Initialize test CPWM modules (no synchronization)
+        cpwm_params_t const cpwm_test_params = {
+            .Fs               = 100000.0F,  // 100kHz frequency
+            .gate_on_voltage  = 1.0F,
+            .gate_off_voltage = 0.0F,
+            .sync_enable      = false,
+            .phase_offset     = 0.0F,
+            .dead_time        = 200e-9F  // 200ns dead time
+        };
+        cpwm_init(&cpwm1, &cpwm_test_params);
+        cpwm_init(&cpwm2, &cpwm_test_params);
+        cpwm_init(&cpwm3, &cpwm_test_params);
+        cpwm_init(&cpwm4, &cpwm_test_params);
 
         mod_initialized = true;
     }
 
-    // Update BPWM module (original)
-    bpwm_step(&bpwm_mod, static_cast<float>(t), 0.5F, 0.0F);  // Example: 50% duty cycle, 0 phase offset
+    // Update clock generator CPWM
+    cpwm_step(&cpwm_clk, static_cast<float>(t), 0.5F, false);  // 50% duty cycle for clock
 
-    // Update ePWM modules with different duty cycles
-    float const cmpa1 = 0.25F;  // 25% duty cycle for ePWM1
-    float const cmpb1 = 0.75F;
+    // Update test CPWM modules with different duty cycles (no synchronization)
+    float const cmp1 = 0.25F;  // 25% duty cycle for CPWM1
+    float const cmp2 = 0.35F;  // 35% duty cycle for CPWM2
+    float const cmp3 = 0.45F;  // 45% duty cycle for CPWM3
+    float const cmp4 = 0.55F;  // 55% duty cycle for CPWM4
 
-    float const cmpa2 = 0.30F;  // 30% duty cycle for ePWM2
-    float const cmpb2 = 0.70F;
-
-    float const cmpa3 = 0.35F;  // 35% duty cycle for ePWM3
-    float const cmpb3 = 0.65F;
-
-    float const cmpa4 = 0.40F;  // 40% duty cycle for ePWM4
-    float const cmpb4 = 0.60F;
-
-    // Execute PWM steps (epwm1 is master, others are synchronized with its period_sync signal)
-    epwm_step(&epwm1, static_cast<float>(t), cmpa1, cmpb1, false);
-    epwm_step(&epwm2, static_cast<float>(t), cmpa2, cmpb2, epwm1.outputs.period_sync);
-    epwm_step(&epwm3, static_cast<float>(t), cmpa3, cmpb3, epwm1.outputs.period_sync);
-    epwm_step(&epwm4, static_cast<float>(t), cmpa4, cmpb4, epwm1.outputs.period_sync);
+    cpwm_step(&cpwm1, static_cast<float>(t), cmp1, false);
+    cpwm_step(&cpwm2, static_cast<float>(t), cmp2, false);
+    cpwm_step(&cpwm3, static_cast<float>(t), cmp3, false);
+    cpwm_step(&cpwm4, static_cast<float>(t), cmp4, false);
 
     // Rising edge detection for ClkOut for digital controller
     static bool prev_clk = false;
-    if (bpwm_mod.outputs.ClkOut && !prev_clk)
+    if (cpwm_clk.outputs.period_sync && !prev_clk)
     {
         /* digital controller code */
-        // --- Example: Lowpass filter In1 using iir_t ---
-        iir_step(&lpf, In1);
-        Out6 = lpf.outputs.y;  // Example: filtered output to Out6
+        // Example: Simple control logic can be added here
+        Out6 = In1 * 0.8F;  // Example: scaled input to output
     }
-    prev_clk = bpwm_mod.outputs.ClkOut;
+    prev_clk = cpwm_clk.outputs.period_sync;
 
     // Assign outputs to data union
-    Out1 = bpwm_mod.outputs.PWM;
-    Out2 = bpwm_mod.outputs.CenterAligned;
-    Out3 = bpwm_mod.outputs.SawtoothUp;
-    Out4 = bpwm_mod.outputs.SawtoothDown;
-    Out5 = static_cast<float>(bpwm_mod.outputs.ClkOut); /* Convert boolean to float for QSPICE */
+    // Clock generator CPWM outputs
+    Out1 = cpwm_clk.outputs.PWMA;
+    Out2 = cpwm_clk.outputs.PWMB;
+    Out3 = cpwm_clk.outputs.counter_normalized;
+    Out4 = static_cast<float>(cpwm_clk.outputs.period_sync);
+    Out5 = 0.0F;  // Reserved
 
-    // Connect ePWM outputs to QSPICE pins:
-    // ePWM1: Q1A, Q2A
-    Q1A = epwm1.outputs.PWMA;
-    Q1B = epwm1.outputs.PWMB;
+    // Connect CPWM outputs to QSPICE pins:
+    // CPWM1: Q1A, Q1B
+    Q1A = cpwm1.outputs.PWMA;
+    Q1B = cpwm1.outputs.PWMB;
 
-    // ePWM2: Q1A, Q2B
-    Q2A = epwm2.outputs.PWMA;
-    Q2B = epwm2.outputs.PWMB;
+    // CPWM2: Q2A, Q2B
+    Q2A = cpwm2.outputs.PWMA;
+    Q2B = cpwm2.outputs.PWMB;
 
-    // ePWM3: Q3A, Q3B
-    Q3A = epwm3.outputs.PWMA;
-    Q3B = epwm3.outputs.PWMB;
+    // CPWM3: Q3A, Q3B
+    Q3A = cpwm3.outputs.PWMA;
+    Q3B = cpwm3.outputs.PWMB;
 
-    // ePWM4: Q4A, Q4B
-    Q4A = epwm4.outputs.PWMA;
-    Q4B = epwm4.outputs.PWMB;
+    // CPWM4: Q4A, Q4B
+    Q4A = cpwm4.outputs.PWMA;
+    Q4B = cpwm4.outputs.PWMB;
 
+    // Debug outputs from CPWM1 to monitor its behavior
+    Out7  = cpwm1.outputs.counter_normalized;            // Counter value [0.0, 1.0]
+    Out8  = static_cast<float>(cpwm1.outputs.period_sync); // Period sync signal
+    Out9  = cpwm1.state.cmp_lead;                        // Compare leading edge value
+    Out10 = cpwm1.state.cmp_lag;                         // Compare lagging edge value
 
-    // Debug outputs from ePWM1 to monitor its behavior
-    Out7  = epwm1.outputs.counter_normalized;                     // Counter value [0.0, 1.0]
-    Out8  = static_cast<float>(epwm1.outputs.counter_direction);  // Counter direction
-    Out9  = static_cast<float>(epwm1.outputs.period_sync);        // Period sync signal
-    Out10 = epwm1.state.cmpa_lead;                                // CMPA leading edge value
-    Out11 = epwm1.state.cmpa_lag;                                 // CMPA lagging edge value
-    Out12 = epwm1.state.cmpb_lead;                                // CMPB leading edge value
-    Out13 = epwm1.state.cmpb_lag;                                 // CMPB lagging edge value
-
-    // Debug outputs from ePWM2 to monitor its behavior
-    Out14 = epwm2.outputs.counter_normalized;                     // Counter value [0.0, 1.0]
-    Out15 = static_cast<float>(epwm2.outputs.counter_direction);  // Counter direction
-    Out16 = static_cast<float>(epwm2.outputs.period_sync);        // Period sync signal
-    Out17 = epwm2.state.cmpa_lead;                                // CMPA leading edge value
-    Out18 = epwm2.state.cmpa_lag;                                 // CMPA lagging edge value
-    Out19 = epwm2.state.cmpb_lead;                                // CMPB leading edge value
-    Out20 = epwm2.state.cmpb_lag;                                 // CMPB lagging edge value
+    // Debug outputs from CPWM2 to monitor its behavior
+    Out11 = cpwm2.outputs.counter_normalized;            // Counter value [0.0, 1.0]
+    Out12 = static_cast<float>(cpwm2.outputs.period_sync); // Period sync signal
+    Out13 = cpwm2.state.cmp_lead;                        // Compare leading edge value
+    Out14 = cpwm2.state.cmp_lag;                         // Compare lagging edge value
 }

@@ -28,7 +28,7 @@ extern "C"
 
 /**
  * @brief Parameters for CPWM module configuration.
- * Ts: carrier period in seconds [1e-6, 1e-3]
+ * Fs: carrier frequency in Hz [1000, 1000000]
  * gate_on_voltage: output voltage when PWM is ON [0.0, 24.0]
  * gate_off_voltage: output voltage when PWM is OFF [0.0, 24.0]
  * sync_enable: enable external synchronization
@@ -37,8 +37,7 @@ extern "C"
  */
 typedef struct
 {
-    float Ts;                /* Carrier period in seconds [1e-6, 1e-3] */
-    float inv_Ts;            /* Inverse of carrier period (1/Ts) */
+    float Fs;                /* Carrier frequency in Hz [1000, 1000000] */
     float gate_on_voltage;   /* Output voltage when PWM is ON [0.0, 24.0] */
     float gate_off_voltage;  /* Output voltage when PWM is OFF [0.0, 24.0] */
     bool  sync_enable;       /* Enable external synchronization */
