@@ -59,10 +59,10 @@ static inline void clear_outputs(epwm_outputs_t* const p_outputs, const float ga
  * @param   t               Current time in seconds.
  * @param   phase_offset    Phase offset in seconds.
  */
-static void calculate_counter_state(epwm_t* const p_epwm, const float t, const float phase_offset)
+static void calculate_counter_state(epwm_t* const p_epwm, const float t)
 {
     /* Phase offset is applied to the carrier itself - optimized with pre-computed inv_Ts */
-    float const carrier_raw = (t + phase_offset) * p_epwm->params.inv_Ts;
+    float const carrier_raw = (t + p_epwm->params.phase_offset) * p_epwm->params.inv_Ts;
     float const carrier_mod = carrier_raw - floorf(carrier_raw);
 
     /* Generate center-aligned (triangular) carrier */
@@ -232,18 +232,15 @@ void epwm_reset(epwm_t* const p_epwm)
  */
 void epwm_step(epwm_t* const p_epwm, const float t, const float cmpa, const float cmpb, const bool sync_in)
 {
-    /* Calculate current counter value with phase offset */
-    float phase_offset = p_epwm->params.phase_offset;
-
     /* Handle synchronization reset */
     if (p_epwm->params.sync_enable && sync_in)
     {
         /* Reset the phase to synchronize with external signal */
-        phase_offset = t;
+        p_epwm->params.phase_offset = t;
     }
 
     /* Generate center-aligned counter */
-    calculate_counter_state(p_epwm, t, phase_offset);
+    calculate_counter_state(p_epwm, t);
 
     /* Calculate compare values with dead time applied */
     calculate_compare_values(p_epwm, cmpa, cmpb);

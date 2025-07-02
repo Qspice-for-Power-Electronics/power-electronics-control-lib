@@ -141,13 +141,13 @@ extern "C" __declspec(dllexport) void ctrl(void** opaque, double t, union uData*
     float&       Out11    = data[35].f;  // output
     float&       Out12    = data[36].f;  // output
     float&       Out13    = data[37].f;  // output
-    float const& Out14    = data[38].f;  // output
-    float const& Out15    = data[39].f;  // output
-    float const& Out16    = data[40].f;  // output
-    float const& Out17    = data[41].f;  // output
-    float const& Out18    = data[42].f;  // output
-    float const& Out19    = data[43].f;  // output
-    float const& Out20    = data[44].f;  // output
+    float&       Out14    = data[38].f;  // output
+    float&       Out15    = data[39].f;  // output
+    float&       Out16    = data[40].f;  // output
+    float&       Out17    = data[41].f;  // output
+    float&       Out18    = data[42].f;  // output
+    float&       Out19    = data[43].f;  // output
+    float&       Out20    = data[44].f;  // output
     float const& Out21    = data[45].f;  // output
     float const& Out22    = data[46].f;  // output
     float const& Out23    = data[47].f;  // output
@@ -204,19 +204,19 @@ extern "C" __declspec(dllexport) void ctrl(void** opaque, double t, union uData*
         // ePWM1 (Master): No phase offset
         epwm_init(&epwm1, &base_epwm_params);  // ePWM2: 90° phase shift (quarter period)
         epwm_params_t epwm2_params = base_epwm_params;
-        epwm2_params.sync_enable   = true;
+        epwm2_params.sync_enable   = false;
         epwm2_params.phase_offset  = 0.25F * base_epwm_params.Ts;  // 90° phase shift (quarter period)
         epwm_init(&epwm2, &epwm2_params);
 
         // ePWM3: 180° phase shift (half period)
         epwm_params_t epwm3_params = base_epwm_params;
-        epwm3_params.sync_enable   = true;
+        epwm3_params.sync_enable   = false;
         epwm3_params.phase_offset  = 0.5F * base_epwm_params.Ts;  // 180° phase shift (half period)
         epwm_init(&epwm3, &epwm3_params);
 
         // ePWM4: 270° phase shift (three-quarter period)
         epwm_params_t epwm4_params = base_epwm_params;
-        epwm4_params.sync_enable   = true;
+        epwm4_params.sync_enable   = false;
         epwm4_params.phase_offset  = 0.75F * base_epwm_params.Ts;  // 270° phase shift
         epwm_init(&epwm4, &epwm4_params);
 
@@ -289,4 +289,13 @@ extern "C" __declspec(dllexport) void ctrl(void** opaque, double t, union uData*
     Out11 = epwm1.state.cmpa_lag;                                 // CMPA lagging edge value
     Out12 = epwm1.state.cmpb_lead;                                // CMPB leading edge value
     Out13 = epwm1.state.cmpb_lag;                                 // CMPB lagging edge value
+
+    // Debug outputs from ePWM2 to monitor its behavior
+    Out14 = epwm2.outputs.counter_normalized;                     // Counter value [0.0, 1.0]
+    Out15 = static_cast<float>(epwm2.outputs.counter_direction);  // Counter direction
+    Out16 = static_cast<float>(epwm2.outputs.period_sync);        // Period sync signal
+    Out17 = epwm2.state.cmpa_lead;                                // CMPA leading edge value
+    Out18 = epwm2.state.cmpa_lag;                                 // CMPA lagging edge value
+    Out19 = epwm2.state.cmpb_lead;                                // CMPB leading edge value
+    Out20 = epwm2.state.cmpb_lag;                                 // CMPB lagging edge value
 }
