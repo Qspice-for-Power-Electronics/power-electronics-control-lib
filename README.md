@@ -46,6 +46,10 @@ A modular C++ library for power electronics control, designed for seamless QSPIC
 │   │       │   ├── bpwm.h
 │   │       │   ├── bpwm.cpp
 │   │       │   └── bpwm.def
+│   │       ├── cpwm/        # Complementary PWM generation
+│   │       │   ├── cpwm.h
+│   │       │   ├── cpwm.cpp
+│   │       │   └── cpwm.def
 │   │       └── epwm/        # Enhanced PWM with advanced features
 │   │           ├── epwm.h
 │   │           ├── epwm.cpp
@@ -64,6 +68,17 @@ A modular C++ library for power electronics control, designed for seamless QSPIC
 │           ├── qspice_module.cpp
 │           ├── qspice_module.def
 │           └── TEMPLATE_USAGE.md
+├── analysis_modules/          # Testing and analysis tools
+│   ├── power_electronics/     # Power electronics module analysis
+│   │   ├── common/           # Shared utilities and basic tests
+│   │   └── filters/          # Filter analysis tools
+│   │       └── iir/         # IIR filter testing
+│   ├── qspice_modules/        # QSPICE-specific module analysis
+│   │   └── ctrl/            # Control system analysis
+│   ├── test_dlls.bat         # Interactive test launcher
+│   └── README.md             # Analysis documentation
+├── analysis/                  # Additional analysis tools
+│   └── dll_testing/          # DLL testing utilities
 ├── config/                    # Configuration files
 │   ├── .clang-format         # Code formatting rules
 │   ├── .clang-tidy          # Static analysis configuration
@@ -88,6 +103,7 @@ A modular C++ library for power electronics control, designed for seamless QSPIC
 │       └── ci.yml            # Continuous integration workflow
 ├── build/                     # Build artifacts (auto-generated)
 ├── logs/                      # Build and cleanup logs
+├── Test.qsch                  # QSPICE test schematic
 └── backup/                    # Automatic backups during cleanup
 ```
 
@@ -673,6 +689,7 @@ python scripts\project_config.py --qspice-modules
   
 - **PWM Modules** (`modules/power_electronics/pwm/`)
   - **BPWM Module** (`modules/power_electronics/pwm/bpwm/`) - Basic PWM generation with phase shift capabilities
+  - **CPWM Module** (`modules/power_electronics/pwm/cpwm/`) - Complementary PWM generation
   - **EPWM Module** (`modules/power_electronics/pwm/epwm/`) - Enhanced PWM with center-aligned counter support, dead time, and advanced action modes
 
 - **Common Definitions** (`modules/power_electronics/common/`)
