@@ -1,174 +1,202 @@
-{
-	"project": {
-		"_comment": "In The Name Of God - Power Electronics Control Library Configuration",
-		"_metadata": {
-			"file": "project_config.json",
-			"author": "Dr.-Ing. Hossein Abedini",
-			"date": "2025-06-08",
-			"license": "This work is dedicated to the public domain under CC0 1.0"
+﻿{
+	"project":  {
+		"_comment":  "In The Name Of God - Power Electronics Control Library Configuration",
+		"_metadata":  {
+			"file":  "project_config.json",
+			"author":  "Dr.-Ing. Hossein Abedini",
+			"date":  "2025-06-08",
+			"license":  "This work is dedicated to the public domain under CC0 1.0"
 		},
-		"name": "Power Electronics Control Library",
-		"version": "1.0.0",
-		"description": "Modular power electronics control library for QSPICE integration designed for real-time signal processing applications",
-		"cpp_standard": "c++11"
+		"name":  "Power Electronics Control Library",
+		"version":  "1.0.0",
+		"description":  "Modular power electronics control library for QSPICE integration designed for real-time signal processing applications",
+		"cpp_standard":  "c++11"
 	},
-	"paths": {
-		"root": ".",
-		"modules": "modules",
-		"build": "build",
-		"config": "config",
-		"scripts": "scripts",
-		"backup": "backup"
+	"paths":  {
+		"root":  ".",
+		"modules":  "modules",
+		"build":  "build",
+		"config":  "config",
+		"scripts":  "scripts",
+		"backup":  "backup"
 	},
-	"modules": {
-		"power_electronics": {
-			"base_path": "modules/power_electronics",
-			"components": {
-				"iir": {
-					"path": "modules/power_electronics/filters/iir",
-					"sources": [
+	"modules":  {
+		"power_electronics":  {
+			"base_path":  "modules/power_electronics",
+			"components":  {
+				"iir":  {
+					"path":  "modules/power_electronics/filters/iir",
+					"sources":  [
 						"iir.cpp"
 					],
-					"headers": [
+					"headers":  [
 						"iir.h"
 					],
-					"dependencies": []
+					"dependencies":  [
+						"common"
+					]
 				},
-				"bpwm": {
-					"path": "modules/power_electronics/pwm/bpwm",
-					"sources": [
+				"bpwm":  {
+					"path":  "modules/power_electronics/pwm/bpwm",
+					"sources":  [
 						"bpwm.cpp"
 					],
-					"headers": [
+					"headers":  [
 						"bpwm.h"
 					],
-					"dependencies": []
+					"dependencies":  [
+						"common"
+					]
 				},
-				"epwm": {
-					"path": "modules/power_electronics/pwm/epwm",
-					"sources": [
+				"epwm":  {
+					"path":  "modules/power_electronics/pwm/epwm",
+					"sources":  [
 						"epwm.cpp"
 					],
-					"headers": [
+					"headers":  [
 						"epwm.h"
 					],
-					"dependencies": []
+					"dependencies":  [
+
+					]
+				},
+				"common":  {
+					"sources":  null,
+					"path":  "modules/power_electronics/common",
+					"dependencies":  [
+
+					],
+					"headers":  [
+						"math_constants.h"
+					]
+				},
+				"cpwm":  {
+					"sources":  [
+						"cpwm.cpp"
+					],
+					"path":  "modules/power_electronics/pwm/cpwm",
+					"dependencies":  [
+
+					],
+					"headers":  [
+						"cpwm.h"
+					]
 				}
 			}
 		},
-		"qspice_modules": {
-			"base_path": "modules/qspice_modules",
-			"components": {
-				"ctrl": {
-					"path": "modules/qspice_modules/ctrl",
-					"sources": [
+		"qspice_modules":  {
+			"base_path":  "modules/qspice_modules",
+			"components":  {
+				"ctrl":  {
+					"path":  "modules/qspice_modules/ctrl",
+					"sources":  [
 						"ctrl.cpp"
 					],
-					"headers": [],
-					"definition_file": "ctrl.def",
-					"dependencies": [
-						"bpwm",
-						"epwm",
-						"iir"
+					"headers":  [
+
 					],
-					"output_dll": "ctrl.dll"
+					"definition_file":  "ctrl.def",
+					"dependencies":  [
+						"cpwm"
+					],
+					"output_dll":  "ctrl.dll"
 				}
 			}
 		}
 	},
-	"build_config": {
-		"compiler": "dmc",
-		"common_flags": [
+	"build_config":  {
+		"compiler":  "dmc",
+		"common_flags":  [
 			"-mn",
 			"-w",
 			"-wx",
 			"-ws"
 		],
-		"include_paths": [
+		"include_paths":  [
 			"modules/power_electronics/common",
 			"modules/**"
 		],
-		"system_libraries": [
+		"system_libraries":  [
 			"kernel32",
 			"user32"
 		],
-		"build_order": [
+		"build_order":  [
 			"power_electronics",
 			"qspice_modules"
 		]
 	},
-	"tools": {
-		"clang_format": {
-			"config_file": "config/.clang-format",
-			"file_extensions": [
+	"tools":  {
+		"clang_format":  {
+			"config_file":  "config/.clang-format",
+			"file_extensions":  [
 				"*.cpp",
 				"*.h"
 			]
 		},
-		"clang_tidy": {
-			"config_file": "config/.clang-tidy",
-			"file_extensions": [
+		"clang_tidy":  {
+			"config_file":  "config/.clang-tidy",
+			"file_extensions":  [
 				"*.cpp",
 				"*.h"
 			],
-			"checks": {
-				"const_correctness": [
+			"checks":  {
+				"const_correctness":  [
 					"misc-const-correctness",
 					"cppcoreguidelines-const-correctness"
 				],
-				"modernization": [
+				"modernization":  [
 					"modernize-use-nullptr",
 					"modernize-use-override",
 					"modernize-use-auto"
 				],
-				"performance": [
+				"performance":  [
 					"performance-*"
 				],
-				"readability": [
+				"readability":  [
 					"readability-*"
 				],
-				"bugprone": [
+				"bugprone":  [
 					"bugprone-*"
 				]
 			}
 		}
 	},
-	"file_patterns": {
-		"source_files": [
+	"file_patterns":  {
+		"source_files":  [
 			"*.cpp"
 		],
-		"header_files": [
+		"header_files":  [
 			"*.h"
 		],
-		"definition_files": [
+		"definition_files":  [
 			"*.def"
 		],
-		"config_files": [
+		"config_files":  [
 			"*.json"
 		],
-		"build_artifacts": [
+		"build_artifacts":  [
 			"*.obj",
 			"*.dll",
 			"*.map",
 			"*.bak"
 		],
-		"backup_files": [
+		"backup_files":  [
 			"*.bak"
 		],
-		"all_files": [
+		"all_files":  [
 			"*.*"
 		]
 	},
-	"quality_assurance": {
-		"formatting": {
-			"enabled": true,
-			"format_on_build": true,
-			"preserve_line_endings": true
+	"quality_assurance":  {
+		"formatting":  {
+			"enabled":  true,
+			"format_on_build":  true,
+			"preserve_line_endings":  true
 		},
-		"static_analysis": {
-			"enabled": true,
-			"fail_on_errors": false,
-			"max_warnings": 100
+		"static_analysis":  {
+			"enabled":  true,
+			"fail_on_errors":  false,
+			"max_warnings":  100
 		}
 	}
 }

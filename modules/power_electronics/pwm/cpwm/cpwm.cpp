@@ -86,7 +86,7 @@ static void calculate_compare_values(cpwm_t* const p_cpwm, const float cmp)
 {
     /* Pre-calculate half dead time value to avoid repeated multiplication */
     float const half_dead_time = p_cpwm->state.dead_time_norm * 0.5F;
-    
+
     /* Calculate rising edge values (add half of dead time) */
     float const cmp_lead_raw = cmp + half_dead_time;
 
@@ -121,7 +121,7 @@ static void process_pwm_actions(cpwm_t* const p_cpwm, const float cmp)
     {
         p_cpwm->outputs.PWMA = p_cpwm->params.gate_off_voltage;
     }
-    
+
     /* PWMB complementary with dead time - active when counter < cmp_lag */
     if (counter < cmp_lag)
     {
@@ -162,7 +162,7 @@ void cpwm_reset(cpwm_t* const p_cpwm)
 {
     /* Store dead time value before clearing */
     float const dead_time_norm = p_cpwm->state.dead_time_norm;
-    
+
     clear_state(&p_cpwm->state);
     clear_outputs(&p_cpwm->outputs, p_cpwm->params.gate_off_voltage);
 

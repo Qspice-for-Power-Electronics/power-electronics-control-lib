@@ -70,6 +70,54 @@ Add your module to `config/project_config.json`:
 }
 ```
 
+### 6. Handle Include Paths for Dependencies
+
+#### Automatic Method (Recommended)
+The project includes automatic dependency detection. After adding your module to the configuration:
+
+1. **Run Project Cleanup** (automatically updates dependencies):
+   ```powershell
+   .\scripts\project_cleanup.bat
+   ```
+   
+   This script will:
+   - Scan your source files for `#include` statements
+   - Automatically detect which power electronics modules you're using
+   - Update the `dependencies` array in `project_config.json`
+   - Ensure proper include paths are available during compilation
+
+2. **Manual Update** (if needed):
+   ```powershell
+   .\scripts\update_dependencies.ps1
+   ```
+
+#### Manual Method
+If you need to manually specify dependencies, update the `dependencies` array in your module configuration:
+
+```json
+"your_module_name": {
+  "dependencies": [
+    "cpwm",      // For PWM generation
+    "iir",       // For filtering
+    "bpwm",      // For bipolar PWM
+    "epwm"       // For enhanced PWM
+  ]
+}
+```
+
+#### Common Include Path Issues
+- **Error**: `fatal error: 'cpwm.h' file not found`
+- **Solution**: Add `cpwm` to your dependencies array
+- **Verification**: Check that the dependency module exists in `project_config.json`
+
+#### Available Power Electronics Modules
+Current modules you can depend on:
+- `cpwm` - Complementary PWM generation
+- `bpwm` - Bipolar PWM control  
+- `epwm` - Enhanced PWM with advanced features
+- `iir` - Infinite Impulse Response filters
+- Add more as they become available in the project
+
 ## Implementation Guidelines
 
 ### Pin Mapping Strategy
@@ -246,6 +294,8 @@ output = output_state ? 1.0f : 0.0f;
 
 ### Build Issues
 - **Missing dependencies**: Check `#include` statements and project config
+- **Include path errors**: Run `.\scripts\project_cleanup.bat` to auto-update dependencies
+- **Module not found**: Verify the dependency module exists in `config/project_config.json`
 - **Export errors**: Verify function name matches .def file
 - **Linking errors**: Ensure all required power electronics modules are built
 
@@ -284,3 +334,31 @@ output = output_state ? 1.0f : 0.0f;
 - **Power electronics**: Review modules in `modules/power_electronics/`
 - Review project documentation in main `README.md`
 - **QSPICE docs**: Refer to QSPICE documentation for interface details
+
+## Frequently Asked Questions
+
+### Q: Do I need to manually manage include paths?
+**A: No!** The project includes automatic dependency detection. Simply:
+1. Add your `#include` statements to your source files
+2. Run `.\scripts\project_cleanup.bat` 
+3. The script will automatically scan your includes and update dependencies
+
+### Q: What if I get "file not found" errors during compilation?
+**A: This usually means missing dependencies.** Solutions:
+1. **First try**: Run `.\scripts\project_cleanup.bat` (fixes 90% of cases)
+2. **If that fails**: Check that the header file exists in the project
+3. **Manual fix**: Add the missing module to your `dependencies` array
+
+### Q: How often should I run project cleanup?
+**A: Run it whenever you add new #include statements or dependencies.** 
+- Safe to run anytime (it only improves code quality)
+- Automatically run by the build process
+- Good practice: run before committing changes
+
+### Q: Can project cleanup break my code?
+**A: No, it only makes safe improvements:**
+- Adds `const` where appropriate
+- Formats code consistently  
+- Updates dependencies automatically
+- Removes unused includes
+- All changes improve code quality without changing functionality

@@ -107,9 +107,22 @@ foreach ($location in $JsonLocations) {
                     Write-Host "  Would format: $($file.Name)" -ForegroundColor Yellow
                     $FilesFormatted++
                 } else {
-                    $formattedLines | Set-Content $file.FullName -Encoding UTF8NoBOM
-                    Write-Host "  Formatted: $($file.Name)" -ForegroundColor Green
-                    $FilesFormatted++
+                    try {
+                        # Try UTF8NoBOM first (PowerShell 6+)
+                        $formattedLines | Set-Content $file.FullName -Encoding UTF8NoBOM
+                        Write-Host "  Formatted: $($file.Name)" -ForegroundColor Green
+                        $FilesFormatted++
+                    } catch {
+                        try {
+                            # Fallback to UTF8 for PowerShell 5.1
+                            $formattedLines | Set-Content $file.FullName -Encoding UTF8
+                            Write-Host "  Formatted: $($file.Name) (UTF8 fallback)" -ForegroundColor Green
+                            $FilesFormatted++
+                        } catch {
+                            Write-Host "  Error formatting $($file.Name): $($_.Exception.Message)" -ForegroundColor Red
+                            $ErrorCount++
+                        }
+                    }
                 }
             } else {
                 if ($Verbose) {

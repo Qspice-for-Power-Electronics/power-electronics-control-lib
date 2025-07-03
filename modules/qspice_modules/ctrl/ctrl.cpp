@@ -141,12 +141,12 @@ extern "C" __declspec(dllexport) void ctrl(void** opaque, double t, union uData*
     float&       Out12    = data[36].f;  // output
     float&       Out13    = data[37].f;  // output
     float&       Out14    = data[38].f;  // output
-    float&       Out15    = data[39].f;  // output
-    float&       Out16    = data[40].f;  // output
-    float&       Out17    = data[41].f;  // output
-    float&       Out18    = data[42].f;  // output
-    float&       Out19    = data[43].f;  // output
-    float&       Out20    = data[44].f;  // output
+    float const& Out15    = data[39].f;  // output
+    float const& Out16    = data[40].f;  // output
+    float const& Out17    = data[41].f;  // output
+    float const& Out18    = data[42].f;  // output
+    float const& Out19    = data[43].f;  // output
+    float const& Out20    = data[44].f;  // output
     float const& Out21    = data[45].f;  // output
     float const& Out22    = data[46].f;  // output
     float const& Out23    = data[47].f;  // output
@@ -171,11 +171,11 @@ extern "C" __declspec(dllexport) void ctrl(void** opaque, double t, union uData*
     (void)I_dc;
 
     // Module initialization code
-    static cpwm_t cpwm_clk;   // Clock generator CPWM
-    static cpwm_t cpwm1;      // Test CPWM 1
-    static cpwm_t cpwm2;      // Test CPWM 2
-    static cpwm_t cpwm3;      // Test CPWM 3
-    static cpwm_t cpwm4;      // Test CPWM 4
+    static cpwm_t cpwm_clk;  // Clock generator CPWM
+    static cpwm_t cpwm1;     // Test CPWM 1
+    static cpwm_t cpwm2;     // Test CPWM 2
+    static cpwm_t cpwm3;     // Test CPWM 3
+    static cpwm_t cpwm4;     // Test CPWM 4
     static bool   mod_initialized = false;
     if (!mod_initialized)
     {
@@ -257,14 +257,14 @@ extern "C" __declspec(dllexport) void ctrl(void** opaque, double t, union uData*
     Q4B = cpwm4.outputs.PWMB;
 
     // Debug outputs from CPWM1 to monitor its behavior
-    Out7  = cpwm1.outputs.counter_normalized;            // Counter value [0.0, 1.0]
-    Out8  = static_cast<float>(cpwm1.outputs.period_sync); // Period sync signal
-    Out9  = cpwm1.state.cmp_lead;                        // Compare leading edge value
-    Out10 = cpwm1.state.cmp_lag;                         // Compare lagging edge value
+    Out7  = cpwm1.outputs.counter_normalized;               // Counter value [0.0, 1.0]
+    Out8  = static_cast<float>(cpwm1.outputs.period_sync);  // Period sync signal
+    Out9  = cpwm1.state.cmp_lead;                           // Compare leading edge value
+    Out10 = cpwm1.state.cmp_lag;                            // Compare lagging edge value
 
     // Debug outputs from CPWM2 to monitor its behavior
-    Out11 = cpwm2.outputs.counter_normalized;            // Counter value [0.0, 1.0]
-    Out12 = static_cast<float>(cpwm2.outputs.period_sync); // Period sync signal
-    Out13 = cpwm2.state.cmp_lead;                        // Compare leading edge value
-    Out14 = cpwm2.state.cmp_lag;                         // Compare lagging edge value
+    Out11 = cpwm2.outputs.counter_normalized;               // Counter value [0.0, 1.0]
+    Out12 = static_cast<float>(cpwm2.outputs.period_sync);  // Period sync signal
+    Out13 = cpwm2.state.cmp_lead;                           // Compare leading edge value
+    Out14 = cpwm2.state.cmp_lag;                            // Compare lagging edge value
 }

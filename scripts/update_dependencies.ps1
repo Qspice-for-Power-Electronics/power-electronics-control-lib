@@ -78,7 +78,146 @@ try {
     exit 1
 }
 
-# Build header-to-module mapping
+# ================================================================================
+# STEP 2.5: Auto-Discover Missing Modules
+# ================================================================================
+
+Write-Host "Scanning filesystem for missing modules..." -ForegroundColor Green
+
+function Add-MissingModule {
+    param(
+        [string]$ModuleType,
+        [string]$ModuleName,
+        [string]$ModulePath,
+        [string[]]$Sources,
+        [string[]]$Headers,
+        [string]$DefFile = $null
+    )
+    
+    Write-Host "  Adding missing module: $ModuleName" -ForegroundColor Yellow
+    
+    $NewModule = @{
+        "path" = $ModulePath
+        "sources" = $Sources
+        "headers" = $Headers
+        "dependencies" = @()
+    }
+    
+    # Add definition file for QSPICE modules
+    if ($DefFile) {
+        $NewModule["definition_file"] = $DefFile
+        $NewModule["output_dll"] = "$ModuleName.dll"
+    }
+    
+    # Convert to PowerShell object with proper structure
+    $ModuleObject = New-Object PSObject
+    foreach ($key in $NewModule.Keys) {
+        $ModuleObject | Add-Member -Type NoteProperty -Name $key -Value $NewModule[$key]
+    }
+    
+    # Add to configuration
+    $Config.modules.$ModuleType.components | Add-Member -Type NoteProperty -Name $ModuleName -Value $ModuleObject
+    
+    return $true
+}
+
+# Get existing modules for comparison
+$ExistingModules = @{}
+foreach ($moduleType in $Config.modules.PSObject.Properties.Name) {
+    foreach ($componentName in $Config.modules.$moduleType.components.PSObject.Properties.Name) {
+        $ExistingModules[$componentName] = $Config.modules.$moduleType.components.$componentName
+    }
+}
+
+$ModulesAdded = 0
+
+# Scan power electronics modules
+$PowerElectronicsBase = "modules/power_electronics"
+if (Test-Path $PowerElectronicsBase) {
+    $PowerElectronicsDirs = Get-ChildItem -Path $PowerElectronicsBase -Recurse -Directory | Where-Object {
+        (Test-Path (Join-Path $_.FullName "*.cpp")) -or (Test-Path (Join-Path $_.FullName "*.h"))
+    }
+    
+    foreach ($dir in $PowerElectronicsDirs) {
+        $ModuleName = $dir.Name
+        $RelativePath = $dir.FullName.Replace((Get-Location).Path + "\", "").Replace("\", "/")
+        
+        # Skip if module already exists
+        if ($ExistingModules.ContainsKey($ModuleName)) {
+            continue
+        }
+        
+        # Find source and header files
+        $CppFiles = Get-ChildItem -Path $dir.FullName -Filter "*.cpp" | ForEach-Object { $_.Name }
+        $HeaderFiles = Get-ChildItem -Path $dir.FullName -Filter "*.h" | ForEach-Object { $_.Name }
+        
+        # Skip directories without relevant files
+        if ($CppFiles.Count -eq 0 -and $HeaderFiles.Count -eq 0) {
+            continue
+        }
+        
+        # Add the missing module
+        if (Add-MissingModule -ModuleType "power_electronics" -ModuleName $ModuleName -ModulePath $RelativePath -Sources $CppFiles -Headers $HeaderFiles) {
+            $ModulesAdded++
+            if ($Verbose) {
+                Write-Host "    Path: $RelativePath" -ForegroundColor Gray
+                Write-Host "    Sources: $($CppFiles -join ', ')" -ForegroundColor Gray
+                Write-Host "    Headers: $($HeaderFiles -join ', ')" -ForegroundColor Gray
+            }
+        }
+    }
+}
+
+# Scan QSPICE modules
+$QSpiceBase = "modules/qspice_modules"
+if (Test-Path $QSpiceBase) {
+    $QSpiceDirs = Get-ChildItem -Path $QSpiceBase -Directory
+    
+    foreach ($dir in $QSpiceDirs) {
+        $ModuleName = $dir.Name
+        $RelativePath = $dir.FullName.Replace((Get-Location).Path + "\", "").Replace("\", "/")
+        
+        # Skip if module already exists
+        if ($ExistingModules.ContainsKey($ModuleName)) {
+            continue
+        }
+        
+        # Find source, header, and definition files
+        $CppFiles = Get-ChildItem -Path $dir.FullName -Filter "*.cpp" | ForEach-Object { $_.Name }
+        $HeaderFiles = Get-ChildItem -Path $dir.FullName -Filter "*.h" | ForEach-Object { $_.Name }
+        $DefFiles = Get-ChildItem -Path $dir.FullName -Filter "*.def" | ForEach-Object { $_.Name }
+        
+        # Skip directories without cpp files (QSPICE modules need cpp)
+        if ($CppFiles.Count -eq 0) {
+            continue
+        }
+        
+        $DefFile = if ($DefFiles.Count -gt 0) { $DefFiles[0] } else { $null }
+        
+        # Add the missing module
+        if (Add-MissingModule -ModuleType "qspice_modules" -ModuleName $ModuleName -ModulePath $RelativePath -Sources $CppFiles -Headers $HeaderFiles -DefFile $DefFile) {
+            $ModulesAdded++
+            if ($Verbose) {
+                Write-Host "    Path: $RelativePath" -ForegroundColor Gray
+                Write-Host "    Sources: $($CppFiles -join ', ')" -ForegroundColor Gray
+                Write-Host "    Headers: $($HeaderFiles -join ', ')" -ForegroundColor Gray
+                if ($DefFile) { Write-Host "    Definition: $DefFile" -ForegroundColor Gray }
+            }
+        }
+    }
+}
+
+if ($ModulesAdded -gt 0) {
+    Write-Host "Added $ModulesAdded missing modules to configuration" -ForegroundColor Green
+} else {
+    Write-Host "No missing modules detected" -ForegroundColor Green
+}
+
+# ================================================================================
+# STEP 3: Build Header-to-Module Mapping (Updated)
+# ================================================================================
+
+# Build header-to-module mapping (now includes newly discovered modules)
 $HeaderToModule = @{}
 $AllModules = @{}
 
@@ -101,7 +240,7 @@ foreach ($moduleType in $Config.modules.PSObject.Properties.Name) {
 Write-Host "Found $($AllModules.Count) modules with $($HeaderToModule.Count) headers" -ForegroundColor Green
 
 # ================================================================================
-# STEP 3: Scan Source Files for Include Dependencies
+# STEP 4: Scan Source Files for Include Dependencies
 # ================================================================================
 
 Write-Host "`nScanning source files for #include statements..." -ForegroundColor Green
@@ -163,7 +302,7 @@ foreach ($moduleType in $Config.modules.PSObject.Properties.Name) {
 Write-Host "Scanned $FileCount source files" -ForegroundColor Green
 
 # ================================================================================
-# STEP 4: Validate Dependencies and Check for Cycles
+# STEP 5: Validate Dependencies and Check for Cycles
 # ================================================================================
 
 Write-Host "`nValidating dependencies..." -ForegroundColor Green
@@ -199,7 +338,7 @@ if (-not $HasCycles) {
 }
 
 # ================================================================================
-# STEP 5: Update Configuration File
+# STEP 6: Update Configuration File
 # ================================================================================
 
 Write-Host "`nUpdating dependencies in configuration..." -ForegroundColor Green
@@ -248,12 +387,15 @@ foreach ($moduleType in $Config.modules.PSObject.Properties.Name) {
 }
 
 # ================================================================================
-# STEP 6: Save Updated Configuration
+# STEP 7: Save Updated Configuration
 # ================================================================================
 
-if ($ChangesDetected) {
+if ($ChangesDetected -or $ModulesAdded -gt 0) {
     if ($DryRun) {
         Write-Host "`nDRY RUN: Configuration changes shown above would be applied" -ForegroundColor Yellow
+        if ($ModulesAdded -gt 0) {
+            Write-Host "DRY RUN: $ModulesAdded modules would be added to configuration" -ForegroundColor Yellow
+        }
     } else {
         # Save updated configuration with proper formatting
         $JsonOutput = $Config | ConvertTo-Json -Depth 10
@@ -261,13 +403,16 @@ if ($ChangesDetected) {
         $JsonOutput = $JsonOutput -replace '    ', '  '
         $JsonOutput | Set-Content $ConfigFile
         Write-Host "`nConfiguration updated: $ConfigFile" -ForegroundColor Green
+        if ($ModulesAdded -gt 0) {
+            Write-Host "Added $ModulesAdded new modules to configuration" -ForegroundColor Green
+        }
     }
 } else {
     Write-Host "`nNo dependency changes detected - configuration is up to date" -ForegroundColor Green
 }
 
 # ================================================================================
-# STEP 7: Summary Report
+# STEP 8: Summary Report
 # ================================================================================
 
 Write-Host "`n===============================================================================" -ForegroundColor Cyan
@@ -275,6 +420,7 @@ Write-Host "DEPENDENCY UPDATE SUMMARY" -ForegroundColor Cyan
 Write-Host "===============================================================================" -ForegroundColor Cyan
 
 Write-Host "Modules processed: $($AllModules.Count)" -ForegroundColor White
+Write-Host "Modules added: $ModulesAdded" -ForegroundColor White
 Write-Host "Source files scanned: $FileCount" -ForegroundColor White
 Write-Host "Headers mapped: $($HeaderToModule.Count)" -ForegroundColor White
 

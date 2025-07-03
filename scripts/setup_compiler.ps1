@@ -11,30 +11,34 @@
 # ***************************************************************************
 
 # ================================================================================
-# Power Electronics Control Library - Digital Mars Compiler Setup Script
+# Power Electronics Control Library - Digital Mars Compiler & LLVM Setup Script
 # ================================================================================
 # 
 # This script automatically downloads and installs the Digital Mars Compiler
-# (DMC) to the standard system location (C:\dm) for building power electronics 
-# control modules used in QSPICE simulations.
+# (DMC) and LLVM/Clang toolchain to standard system locations for building power 
+# electronics control modules used in QSPICE simulations.
 #
 # WHAT THIS SCRIPT DOES:
-# 1. Checks if Digital Mars Compiler is already installed in C:\dm
-# 2. Downloads DMC from official sources if not present
-# 3. Installs compiler to standard system location (C:\dm)
-# 4. Adds DMC to system PATH permanently for all users
-# 5. Validates installation by testing basic compilation
-# 6. Creates system-wide development environment
+# 1. Installs LLVM/Clang toolchain using winget (provides clang-format)
+# 2. Adds LLVM to system PATH permanently
+# 3. Checks if Digital Mars Compiler is already installed in C:\dm
+# 4. Downloads DMC from official sources if not present
+# 5. Installs compiler to standard system location (C:\dm)
+# 6. Adds DMC to system PATH permanently for all users
+# 7. Validates installation by testing basic compilation tools
+# 8. Creates system-wide development environment
 #
 # REQUIREMENTS:
 # - PowerShell 5.0 or higher
 # - Administrator privileges (required for system installation)
 # - Internet connection for downloading compiler
 # - Windows operating system (DMC is Windows-only)
+# - App Installer (winget) for LLVM installation
 #
 # OUTPUT:
+# - C:\Program Files\LLVM directory with LLVM/Clang toolchain
 # - C:\dm directory with complete DMC installation
-# - System PATH updated to include C:\dm\bin
+# - System PATH updated to include both tool locations
 # - Validation report showing compiler capabilities
 #
 # USAGE:
@@ -42,8 +46,8 @@
 #   .\setup_compiler.ps1 -Force             # Force reinstall
 #   .\setup_compiler.ps1 -Quiet             # Suppress verbose output
 #
-# NOTE: This script requires Administrator privileges to install to C:\dm
-#       and modify the system PATH. Run PowerShell as Administrator.
+# NOTE: This script requires Administrator privileges to install to system
+#       locations and modify the system PATH. Run PowerShell as Administrator.
 #
 # ================================================================================
 
@@ -82,7 +86,7 @@ function Write-Error-Status {
 }
 
 function Add-ToSystemPath {
-    param([string]$NewPath)
+    param([string]$NewPath, [string]$Description = "directory")
     
     $BinPath = Join-Path $NewPath "bin"
     
@@ -93,11 +97,11 @@ function Add-ToSystemPath {
         # Check if path is already in PATH
         $PathsArray = $CurrentPath -split ";"
         if ($PathsArray -contains $BinPath) {
-            Write-Status "DMC bin directory already in system PATH" "Green"
+            Write-Status "$Description bin directory already in system PATH" "Green"
             return $true
         }
         
-        # Add DMC bin directory to PATH
+        # Add bin directory to PATH
         $NewSystemPath = $CurrentPath + ";" + $BinPath
         [Environment]::SetEnvironmentVariable("PATH", $NewSystemPath, "Machine")
         
@@ -109,6 +113,73 @@ function Add-ToSystemPath {
     }
     catch {
         Write-Error-Status "Failed to add to system PATH: $($_.Exception.Message)"
+        return $false
+    }
+}
+
+function Install-LLVM {
+    Write-Status "=== LLVM/Clang Installation ===" "Cyan"
+    
+    # Check if LLVM is already installed
+    $LLVMPath = "C:\Program Files\LLVM"
+    $ClangFormatPath = Join-Path $LLVMPath "bin\clang-format.exe"
+    
+    if ((Test-Path $ClangFormatPath) -and (-not $Force)) {
+        Write-Status "LLVM/Clang already installed at: $LLVMPath" "Green"
+        Write-Status "Use -Force to re-install" "Yellow"
+        
+        # Ensure it's in PATH
+        Add-ToSystemPath $LLVMPath "LLVM"
+        return $true
+    }
+    
+    # Check if winget is available
+    if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
+        Write-Error-Status "winget is not available on this system"
+        Write-Status "Please install App Installer from Microsoft Store" "Yellow"
+        return $false
+    }
+    
+    try {
+        Write-Status "Installing LLVM/Clang using winget..." "Yellow"
+        
+        # Install LLVM using winget
+        $InstallResult = & winget install LLVM.LLVM --accept-source-agreements --accept-package-agreements 2>&1
+        
+        if ($LASTEXITCODE -eq 0) {
+            Write-Status "LLVM/Clang installed successfully" "Green"
+            
+            # Add LLVM to system PATH
+            $PathAdded = Add-ToSystemPath $LLVMPath "LLVM"
+            
+            # Verify installation
+            if (Test-Path $ClangFormatPath) {
+                Write-Status "LLVM installation verified" "Green"
+                
+                # Show version info
+                try {
+                    $ClangVersion = & "$LLVMPath\bin\clang-format.exe" --version 2>&1
+                    Write-Status "clang-format version: $ClangVersion" "Green"
+                }
+                catch {
+                    Write-Status "LLVM installed but version check failed" "Yellow"
+                }
+                
+                return $true
+            }
+            else {
+                Write-Error-Status "LLVM installation verification failed"
+                return $false
+            }
+        }
+        else {
+            Write-Error-Status "LLVM installation failed with exit code: $LASTEXITCODE"
+            Write-Status "Output: $InstallResult" "Yellow"
+            return $false
+        }
+    }
+    catch {
+        Write-Error-Status "Failed to install LLVM: $($_.Exception.Message)"
         return $false
     }
 }
@@ -189,13 +260,23 @@ function Setup-Compiler {
     Write-Status "=== Digital Mars Compiler Setup ===" "Cyan"
     Write-Status "Installing to standard location: $CompilerDir" "Cyan"
     
+    # First install LLVM/Clang (required for clang-format)
+    Write-Status "Installing LLVM/Clang first..." "Cyan"
+    $LLVMInstalled = Install-LLVM
+    
+    if (-not $LLVMInstalled) {
+        Write-Error-Status "LLVM/Clang installation failed"
+        Write-Status "Build process requires clang-format for code formatting" "Yellow"
+        return $false
+    }
+    
     # Check if compiler already exists in standard location
     if ((Test-CompilerInstalled) -and (-not $Force)) {
         Write-Status "Digital Mars Compiler already installed at: $CompilerDir" "Green"
         Write-Status "Use -Force to re-install" "Yellow"
         
         # Ensure it's in PATH
-        Add-ToSystemPath $CompilerDir
+        Add-ToSystemPath $CompilerDir "DMC"
         return $true
     }
     
@@ -284,7 +365,7 @@ function Setup-Compiler {
     Copy-Item $DmcSource $CompilerDir -Recurse -Force
     
     # Add to system PATH permanently
-    $PathAdded = Add-ToSystemPath $CompilerDir
+    $PathAdded = Add-ToSystemPath $CompilerDir "DMC"
     
     # Cleanup temp files
     Remove-Item $TempDir -Recurse -Force
@@ -308,6 +389,23 @@ function Setup-Compiler {
         }
         catch {
             Write-Status "Compiler installed but version check failed" "Yellow"
+        }
+        
+        # Final verification of all tools
+        Write-Status "=== Tool Verification ===" "Cyan"
+        
+        # Test DMC
+        if (Get-Command dmc -ErrorAction SilentlyContinue) {
+            Write-Status "✓ Digital Mars Compiler (dmc) is available" "Green"
+        } else {
+            Write-Status "✗ Digital Mars Compiler (dmc) not found in PATH" "Red"
+        }
+        
+        # Test clang-format
+        if (Get-Command clang-format -ErrorAction SilentlyContinue) {
+            Write-Status "✓ clang-format is available" "Green"
+        } else {
+            Write-Status "✗ clang-format not found in PATH" "Red"
         }
         
         return $true

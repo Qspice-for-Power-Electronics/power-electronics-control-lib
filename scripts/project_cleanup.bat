@@ -474,14 +474,19 @@ call :log "Formatting JSON configuration files..."
 
 if "!DRY_RUN!"=="true" (
     call :log "Running JSON formatting in preview mode..."
-    powershell.exe -ExecutionPolicy Bypass -File "scripts\format_json.ps1" -DryRun
+    powershell.exe -ExecutionPolicy Bypass -File "scripts\format_json.ps1" -DryRun 2>&1 > temp_json_output.txt
+    for /f "delims=" %%i in (temp_json_output.txt) do call :log "  %%i"
+    del temp_json_output.txt 2>nul
 ) else (
     call :log "Applying JSON formatting..."
-    powershell.exe -ExecutionPolicy Bypass -File "scripts\format_json.ps1"
+    powershell.exe -ExecutionPolicy Bypass -File "scripts\format_json.ps1" 2>&1 > temp_json_output.txt
+    for /f "delims=" %%i in (temp_json_output.txt) do call :log "  %%i"
+    del temp_json_output.txt 2>nul
 )
 
 if errorlevel 1 (
     call :log "Warning: Issues found during JSON formatting"
+    call :log "Check the logged output above for specific error details"
     set /a ERROR_COUNT+=1
 ) else (
     call :log "JSON formatting completed successfully"
