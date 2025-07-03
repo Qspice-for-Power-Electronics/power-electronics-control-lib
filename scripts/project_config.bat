@@ -1,3 +1,4 @@
+@echo off
 REM *************************** In The Name Of God ***************************
 REM * @file    project_config.bat
 REM * @brief   Batch wrapper for project configuration management

@@ -68,8 +68,13 @@ class ProjectConfig:
     def _load_config(self):
         """Load configuration from JSON file."""
         try:
-            with open(self.config_file, 'r') as f:
-                return json.load(f)
+            # Try UTF-8 with BOM first, then fall back to UTF-8
+            try:
+                with open(self.config_file, 'r', encoding='utf-8-sig') as f:
+                    return json.load(f)
+            except UnicodeDecodeError:
+                with open(self.config_file, 'r', encoding='utf-8') as f:
+                    return json.load(f)
         except FileNotFoundError:
             print(f"Error: Configuration file '{self.config_file}' not found")
             sys.exit(1)
