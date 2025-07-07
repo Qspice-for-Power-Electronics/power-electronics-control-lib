@@ -554,9 +554,9 @@ if "!DRY_RUN!"=="true" (
 
 call :log ""
 call :log "QUALITY METRICS:"
-call :log "- Total source files: !SOURCE_FILE_COUNT!"
-call :log "- Files with remaining issues: Files requiring manual review"
-call :log "- Remaining warnings: !REMAINING_ISSUES!"
+call :log "- Total source files !SOURCE_FILE_COUNT!"
+call :log "- Files requiring manual review !ERROR_COUNT!"
+call :log "- Remaining warnings !REMAINING_ISSUES!"
 
 if !ERROR_COUNT! gtr 0 (
     call :log ""
@@ -567,14 +567,15 @@ if !ERROR_COUNT! gtr 0 (
 if "!DRY_RUN!"=="false" (
     call :log ""
     call :log "NEXT STEPS:"
-    call :log "1. Review changed files: git diff"
-    call :log "2. Test build: .\build_all.bat"
-    call :log "3. Commit changes: git add . && git commit -m \"Apply automatic code cleanup\""
+    call :log "1 Review changed files - git diff"
+    call :log "2 Test build - PowerShell - scripts\build_all.bat"
+    call :log "   Or use VS Code task Ctrl+Shift+P -> Tasks: Run Task -> Build All Modules"
+    call :log "3 Commit changes - git add . and git commit"
 )
 
 call :log ""
 call :log "LOGGING:"
-call :log "- Complete log saved to: %LOG_FILE%"
+call :log "- Complete log saved to %LOG_FILE%"
 call :log "- Log folder excluded from git tracking"
 
 REM ================================================================================
