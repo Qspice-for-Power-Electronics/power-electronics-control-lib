@@ -124,8 +124,14 @@ echo Cleaning all build artifacts...
 if exist %BUILD_DIR% (
     rmdir /s /q %BUILD_DIR%
 )
-REM Delete DLLs, map files, object files, and backup files from root directory
-del /f /q *.dll *.map *.obj *.bak 2>nul
+REM Delete only QSPICE module DLLs from root directory (keep power electronics DLLs separate)
+for /d %%m in (modules\qspice_modules\*) do (
+    if exist "%%~nxm.dll" (
+        del /f /q "%%~nxm.dll" 2>nul
+    )
+)
+REM Also clean other build artifacts from root
+del /f /q *.map *.obj *.bak 2>nul
 
 REM Create fresh build directory for new compilation
 mkdir %BUILD_DIR%
@@ -285,17 +291,27 @@ REM ============================================================================
 REM Return to original directory
 popd
 
-REM Copy the resulting DLLs to root directory only if build succeeded
+REM Copy only QSPICE module DLLs to root directory (power electronics DLLs stay in build/)
 if !ERROR_COUNT! equ 0 (
-    echo Copying built DLLs to root directory...
+    echo Copying QSPICE module DLLs to root directory...
     set DLL_COUNT=0
-    REM Copy each DLL from build directory to root for QSPICE usage
+    set QSPICE_DLL_COUNT=0
+    REM Count total DLLs built
     for %%f in (%BUILD_DIR%\*.dll) do (
-        copy /Y "%%f" . > nul
         set /a DLL_COUNT+=1
     )
-    echo Build completed successfully. Built !DLL_COUNT! modules.
-    echo DLL files are ready for use in QSPICE simulations.
+    REM Copy only QSPICE module DLLs to root (those that have corresponding module directories)
+    for /d %%m in (modules\qspice_modules\*) do (
+        if exist "%BUILD_DIR%\%%~nxm.dll" (
+            copy /Y "%BUILD_DIR%\%%~nxm.dll" . > nul
+            set /a QSPICE_DLL_COUNT+=1
+            echo Copied %%~nxm.dll to root directory for QSPICE usage
+        )
+    )
+    echo Build completed successfully. Built !DLL_COUNT! total modules.
+    echo Copied !QSPICE_DLL_COUNT! QSPICE module DLLs to root directory.
+    echo Power electronics module DLLs remain in build/ directory.
+    echo QSPICE module DLL files are ready for use in simulations.
 ) else (
     echo Build failed with !ERROR_COUNT! errors
     echo Please check the error messages above and fix the issues.

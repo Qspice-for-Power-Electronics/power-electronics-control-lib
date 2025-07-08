@@ -594,10 +594,16 @@ if exist build (
     call :log "Removed build directory"
 )
 
-REM Delete DLLs, map files, object files, and backup files from root directory
-del /f /q *.dll *.map *.obj *.bak 2>nul
+REM Delete only QSPICE module DLLs from root directory (keep power electronics DLLs in build/)
+for /d %%m in (modules\qspice_modules\*) do (
+    if exist "%%~nxm.dll" (
+        del /f /q "%%~nxm.dll" 2>nul
+    )
+)
+REM Also clean other build artifacts from root
+del /f /q *.map *.obj *.bak 2>nul
 if errorlevel 0 (
-    call :log "Removed build artifacts from root directory"
+    call :log "Removed QSPICE module DLLs and build artifacts from root directory"
 )
 
 call :log "Build artifacts cleaned successfully"
