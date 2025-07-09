@@ -23,6 +23,16 @@ extern "C"
 
 #include <stdint.h>
 
+/********************************* MACROS ************************************/
+
+/**
+ * @brief Helper macro to convert degrees to phase offset in seconds for the given frequency
+ * @param degrees Phase offset in degrees (0-360)
+ * @param frequency PWM frequency in Hz
+ * @return Phase offset in seconds
+ */
+#define DEGREES_TO_PHASE_OFFSET(degrees, frequency) ((degrees) / 360.0F / (frequency))
+
     /***************************** TYPE DEFINITIONS ******************************/
 
     /**
