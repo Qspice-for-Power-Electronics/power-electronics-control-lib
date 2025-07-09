@@ -317,7 +317,8 @@ call :log "PHASE 4: Applying const correctness and core improvements..."
 call :log "================================================================================"
 REM Define core improvement checks (const correctness, selective modernization)
 REM Exclude modernize-use-using to preserve typedef struct syntax for C compatibility
-set CORE_CHECKS=misc-const-correctness,cppcoreguidelines-const-correctness,modernize-use-nullptr,modernize-use-override,modernize-use-auto,performance-unnecessary-copy-initialization
+REM Exclude modernize-use-auto to preserve explicit type declarations
+set CORE_CHECKS=misc-const-correctness,cppcoreguidelines-const-correctness,modernize-use-nullptr,modernize-use-override,performance-unnecessary-copy-initialization
 
 REM Process each source file for core improvements
 for /r "modules" %%f in (*.cpp *.h) do (
@@ -358,7 +359,8 @@ REM Define modernization and performance checks (excluding typedef and trailing 
 REM Exclude modernize-use-using to keep traditional typedef struct syntax
 REM Exclude modernize-use-trailing-return-type to keep traditional function syntax
 REM Exclude modernize-deprecated-headers to preserve C-style headers like math.h
-set MODERNIZATION_CHECKS=modernize-*,-modernize-use-using,-modernize-use-trailing-return-type,-modernize-deprecated-headers,performance-*
+REM Exclude modernize-use-auto to preserve explicit type declarations
+set MODERNIZATION_CHECKS=modernize-*,-modernize-use-using,-modernize-use-trailing-return-type,-modernize-deprecated-headers,-modernize-use-auto,performance-*
 
 REM Process files for modernization and performance improvements
 set FILES_MODERNIZED=0

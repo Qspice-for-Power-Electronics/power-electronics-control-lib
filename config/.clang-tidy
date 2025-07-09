@@ -26,6 +26,7 @@ Checks: >
   readability-const-return-type,
   cppcoreguidelines-const-correctness,
   -modernize-use-trailing-return-type,
+  -modernize-use-auto,
   -readability-magic-numbers,
   -cert-err58-cpp,
   -misc-non-private-member-variables-in-classes
