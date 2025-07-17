@@ -109,7 +109,7 @@ static void sample_input_signals(float V_1, float I_1, float I_1_2, float V_2, f
  * processing delay, then steps the PWM module with the updated parameters.
  */
 static void handle_pwm_update_and_step(double t, bool& pwm_update_pending, float control_calculation_time, float PWM_UPDATE_DELAY_TIME,
-                                       float calculated_duty, cpwm_t& pwm_module);
+                                       float calculated_duty, cpwm_t& pwm_module, float freq, float dead_time, float phase_offset);
 
 /**************************** PUBLIC FUNCTIONS *******************************/
 // int DllMain() must exist and return 1 for a process to load the .DLL
@@ -273,7 +273,8 @@ extern "C" __declspec(dllexport) void ctrl(void** opaque, double t, union uData*
     float calculated_duty = sampled_V_1;  // Example duty cycle, replace with your control logic
 
     // Handle PWM parameter updates and module stepping
-    handle_pwm_update_and_step(t, pwm_update_pending, control_calculation_time, PWM_UPDATE_DELAY_TIME, calculated_duty, pwm_module);
+    handle_pwm_update_and_step(t, pwm_update_pending, control_calculation_time, PWM_UPDATE_DELAY_TIME, calculated_duty, pwm_module, freq, dead_time,
+                               phase_offset);
 
     // Assign PWM outputs
     Q1A = pwm_module.outputs.PWMA;  // PWM channel A
@@ -355,9 +356,12 @@ static void sample_input_signals(float V_1, float I_1, float I_1_2, float V_2, f
  * @param PWM_UPDATE_DELAY_TIME Delay time before applying PWM updates
  * @param calculated_duty The newly calculated duty cycle to apply
  * @param pwm_module PWM module reference
+ * @param freq PWM frequency
+ * @param dead_time Dead time for PWM
+ * @param phase_offset Phase offset for PWM
  */
 static void handle_pwm_update_and_step(double t, bool& pwm_update_pending, float control_calculation_time, float PWM_UPDATE_DELAY_TIME,
-                                       float calculated_duty, cpwm_t& pwm_module)
+                                       float calculated_duty, cpwm_t& pwm_module, float freq, float dead_time, float phase_offset)
 {
     // 4. TIME-BASED DELAY IMPLEMENTATION: Apply parameters after specified delay time
     // Check if enough time has passed since the control calculation AND update is pending
@@ -366,12 +370,10 @@ static void handle_pwm_update_and_step(double t, bool& pwm_update_pending, float
     {
         // 5. UPDATE: Update PWM parameters with delayed duty cycle (executed once per control cycle)
         // This simulates updating PWM registers in the microcontroller with processing delay
-        // Use the new update_parameters function to update duty cycle at runtime
-        update_parameters(&pwm_module, 0.0F, -1.0F, 0.0F/0.0F, calculated_duty);  // Update only duty cycle (NaN for phase_offset)
-        pwm_update_pending = false;            // Clear flag after successful update
+        update_parameters(&pwm_module, freq, dead_time, phase_offset, calculated_duty);
+        pwm_update_pending = false;  // Clear flag after successful update
     }
 
-    // Step the CPWM module (duty cycle is now stored internally)
-    // This ensures the delay is properly simulated - PWM continues with old duty until delay expires
+    // Step the CPWM module with updated parameters
     cpwm_step(&pwm_module, static_cast<float>(t), false);
 }
