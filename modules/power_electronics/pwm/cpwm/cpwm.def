@@ -1,0 +1,10 @@
+LIBRARY "cpwm.dll"
+DESCRIPTION 'cpwm as a DLL'
+EXETYPE NT
+SUBSYSTEM WINDOWS
+CODE SHARED EXECUTE
+DATA WRITE
+EXPORTS
+cpwm_init
+cpwm_step
+cpwm_reset

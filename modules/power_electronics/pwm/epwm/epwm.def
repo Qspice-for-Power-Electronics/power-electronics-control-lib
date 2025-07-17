@@ -1,0 +1,10 @@
+LIBRARY "epwm.dll"
+DESCRIPTION 'epwm as a DLL'
+EXETYPE NT
+SUBSYSTEM WINDOWS
+CODE SHARED EXECUTE
+DATA WRITE
+EXPORTS
+epwm_init
+epwm_step
+epwm_reset

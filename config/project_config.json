@@ -1,0 +1,202 @@
+﻿{
+	"project":  {
+		"_comment":  "In The Name Of God - Power Electronics Control Library Configuration",
+		"_metadata":  {
+			"file":  "project_config.json",
+			"author":  "Dr.-Ing. Hossein Abedini",
+			"date":  "2025-06-08",
+			"license":  "This work is dedicated to the public domain under CC0 1.0"
+		},
+		"name":  "Power Electronics Control Library",
+		"version":  "1.0.0",
+		"description":  "Modular power electronics control library for QSPICE integration designed for real-time signal processing applications",
+		"cpp_standard":  "c++11"
+	},
+	"paths":  {
+		"root":  ".",
+		"modules":  "modules",
+		"build":  "build",
+		"config":  "config",
+		"scripts":  "scripts",
+		"backup":  "backup"
+	},
+	"modules":  {
+		"power_electronics":  {
+			"base_path":  "modules/power_electronics",
+			"components":  {
+				"iir":  {
+					"path":  "modules/power_electronics/filters/iir",
+					"sources":  [
+						"iir.cpp"
+					],
+					"headers":  [
+						"iir.h"
+					],
+					"dependencies":  [
+						"common"
+					]
+				},
+				"bpwm":  {
+					"path":  "modules/power_electronics/pwm/bpwm",
+					"sources":  [
+						"bpwm.cpp"
+					],
+					"headers":  [
+						"bpwm.h"
+					],
+					"dependencies":  [
+						"common"
+					]
+				},
+				"epwm":  {
+					"path":  "modules/power_electronics/pwm/epwm",
+					"sources":  [
+						"epwm.cpp"
+					],
+					"headers":  [
+						"epwm.h"
+					],
+					"dependencies":  [
+
+					]
+				},
+				"common":  {
+					"sources":  null,
+					"path":  "modules/power_electronics/common",
+					"dependencies":  [
+
+					],
+					"headers":  [
+						"math_constants.h"
+					]
+				},
+				"cpwm":  {
+					"sources":  [
+						"cpwm.cpp"
+					],
+					"path":  "modules/power_electronics/pwm/cpwm",
+					"dependencies":  [
+
+					],
+					"headers":  [
+						"cpwm.h"
+					]
+				}
+			}
+		},
+		"qspice_modules":  {
+			"base_path":  "modules/qspice_modules",
+			"components":  {
+				"ctrl":  {
+					"path":  "modules/qspice_modules/ctrl",
+					"sources":  [
+						"ctrl.cpp"
+					],
+					"headers":  [
+
+					],
+					"definition_file":  "ctrl.def",
+					"dependencies":  [
+						"cpwm"
+					],
+					"output_dll":  "ctrl.dll"
+				}
+			}
+		}
+	},
+	"build_config":  {
+		"compiler":  "dmc",
+		"common_flags":  [
+			"-mn",
+			"-w",
+			"-wx",
+			"-ws"
+		],
+		"include_paths":  [
+			"modules/power_electronics/common",
+			"modules/**"
+		],
+		"system_libraries":  [
+			"kernel32",
+			"user32"
+		],
+		"build_order":  [
+			"power_electronics",
+			"qspice_modules"
+		]
+	},
+	"tools":  {
+		"clang_format":  {
+			"config_file":  "config/.clang-format",
+			"file_extensions":  [
+				"*.cpp",
+				"*.h"
+			]
+		},
+		"clang_tidy":  {
+			"config_file":  "config/.clang-tidy",
+			"file_extensions":  [
+				"*.cpp",
+				"*.h"
+			],
+			"checks":  {
+				"const_correctness":  [
+					"misc-const-correctness",
+					"cppcoreguidelines-const-correctness"
+				],
+				"modernization":  [
+					"modernize-use-nullptr",
+					"modernize-use-override",
+					"modernize-use-auto"
+				],
+				"performance":  [
+					"performance-*"
+				],
+				"readability":  [
+					"readability-*"
+				],
+				"bugprone":  [
+					"bugprone-*"
+				]
+			}
+		}
+	},
+	"file_patterns":  {
+		"source_files":  [
+			"*.cpp"
+		],
+		"header_files":  [
+			"*.h"
+		],
+		"definition_files":  [
+			"*.def"
+		],
+		"config_files":  [
+			"*.json"
+		],
+		"build_artifacts":  [
+			"*.obj",
+			"*.dll",
+			"*.map",
+			"*.bak"
+		],
+		"backup_files":  [
+			"*.bak"
+		],
+		"all_files":  [
+			"*.*"
+		]
+	},
+	"quality_assurance":  {
+		"formatting":  {
+			"enabled":  true,
+			"format_on_build":  true,
+			"preserve_line_endings":  true
+		},
+		"static_analysis":  {
+			"enabled":  true,
+			"fail_on_errors":  false,
+			"max_warnings":  100
+		}
+	}
+}

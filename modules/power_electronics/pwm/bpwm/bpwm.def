@@ -1,0 +1,10 @@
+LIBRARY "bpwm.dll"
+DESCRIPTION 'bpwm as a DLL'
+EXETYPE NT
+SUBSYSTEM WINDOWS
+CODE SHARED EXECUTE
+DATA WRITE
+EXPORTS
+bpwm_init
+bpwm_step
+bpwm_reset

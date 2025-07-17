@@ -1,0 +1,138 @@
+// *************************** In The Name Of God ***************************
+// * @file    tasks.json
+// * @brief   VS Code tasks configuration for power electronics control library
+// * @author  Dr.-Ing. Hossein Abedini
+// * @date    2025-06-08
+// * This file defines automated tasks for building, cleaning, and maintaining
+// * the C++ power electronics control library for QSPICE integration.
+// * @license This work is dedicated to the public domain under CC0 1.0.
+// *          Please use it for good and beneficial purposes!
+// ***************************************************************************
+
+{
+    // VS Code Tasks Configuration for Power Electronics Control Library
+    // 
+    // This file defines automated tasks for building, cleaning, and maintaining
+    // the C++ power electronics control library for QSPICE integration.
+    //
+    // HOW TO RUN TASKS:
+    // Method 1: Press Ctrl+Shift+P => "Tasks: Run Task" => Select task
+    // Method 2: Terminal menu => "Run Task..." => Select task
+    // Method 3: Use keyboard shortcuts if configured
+    //
+    // AVAILABLE TASKS:
+    // 1. "Setup Compiler" - Downloads and installs Digital Mars Compiler if not present
+    // 2. "Project Cleanup" - Runs comprehensive project cleanup including build artifacts and code quality
+    // 3. "Build All Modules" - Builds all power electronics and QSPICE modules
+	"version": "2.0.0",
+	"tasks": [
+		{
+            // TASK 1: Setup Compiler
+            // Purpose: Downloads and installs development tools (DMC + LLVM + dependency check)
+            // Usage: Run this first on a fresh clone to setup the build environment
+            // Features:
+            //   - Automatic download and installation of Digital Mars Compiler
+            //   - LLVM/Clang tools installation (clang-format)
+            //   - Python validation and project configuration check
+            //   - Multiple installation methods (winget, chocolatey fallbacks)
+            //   - Dependency checking mode (-CheckOnly parameter available)
+            //   - Skip options for individual components
+            // Requirements: Internet connection, PowerShell 5.0+, Administrator privileges
+            // Parameters: -Force (reinstall), -CheckOnly (check only), -SkipDMC, -SkipLLVM
+			"label": "Setup Compiler",
+			"type": "shell",
+			"command": "powershell.exe",
+			"args": [
+				"-ExecutionPolicy", "Bypass",
+				"-File", "${workspaceFolder}/scripts/setup_compiler.ps1"
+			],
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": true,
+				"panel": "shared",
+				"clear": true
+			},
+			"detail": "Download and install development tools (DMC, LLVM) with dependency checking"
+		},
+		{
+            // TASK 2: Project Cleanup
+            // Purpose: Runs comprehensive project cleanup and quality improvements
+            // Features:
+            //   - Cleans all build artifacts and temporary files
+            //   - Clang-tidy analysis for const correctness
+            //   - Code formatting and style consistency  
+            //   - Include header cleanup and optimization
+            //   - Automated code quality suggestions
+            //   - Adds parentheses around #define values for safer macro definitions
+            //   - JSON file formatting with consistent indentation
+            //   - Automatic dependency detection and updates
+            // Usage: Run periodically to maintain project quality
+            // Requirements: Clang-tidy must be installed and in PATH
+            // Note: Runs in dry-run mode by default (preview changes only)
+			"label": "Project Cleanup",
+			"type": "shell",
+			"command": "${workspaceFolder}/scripts/project_cleanup.bat",
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "shared"
+			},
+			"detail": "Run comprehensive project cleanup including build artifacts, const correctness and formatting"
+		},
+		{
+            // TASK 3: Build All Modules
+            // Purpose: Compiles all power electronics and QSPICE modules using Digital Mars Compiler
+            // Usage: This is the default build task (Ctrl+Shift+B)
+            // Output: Creates .dll files in build/ directory for QSPICE integration
+            // Requirements: Digital Mars Compiler (DMC) must be in PATH
+			"label": "Build All Modules",
+			"type": "shell",
+			"command": "${workspaceFolder}/scripts/build_all.bat",
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "shared",
+				"showReuseMessage": true,
+				"clear": false
+			},
+			"problemMatcher": [
+				"$gcc"
+			],
+			"detail": "Build all power electronics and QSPICE modules using Digital Mars Compiler"
+		},
+		{
+            // TASK 4: Check Dependencies
+            // Purpose: Validates all required tools and dependencies are available
+            // Usage: Run this first on a new laptop to diagnose any setup issues
+            // Features:
+            //   - Checks Python, DMC, clang-format availability
+            //   - Validates project structure and configuration
+            //   - Reports missing dependencies with solutions
+			"label": "Check Dependencies",
+			"type": "shell",
+			"command": "powershell.exe",
+			"args": [
+				"-ExecutionPolicy", "Bypass",
+				"-File", "${workspaceFolder}/scripts/Check-Dependencies.ps1"
+			],
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": true,
+				"panel": "shared",
+				"clear": true
+			},
+			"detail": "Check all dependencies and validate project setup"
+		}
+	]
+}

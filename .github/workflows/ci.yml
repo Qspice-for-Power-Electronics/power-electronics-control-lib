@@ -1,0 +1,78 @@
+# *************************** In The Name Of God ***************************
+# * @file    ci.yml
+# * @brief   Simple CI workflow
+# * @author  Dr.-Ing. Hossein Abedini
+# * @date    2025-06-22
+# * @note    Build verification using project_config.json configuration
+# * @license This work is dedicated to the public domain under CC0 1.0.
+# *          Please use it for good and beneficial purposes!
+# ***************************************************************************
+
+name: Build Test
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Digital Mars Compiler
+      shell: powershell
+      run: |
+        Write-Host "Setting up Digital Mars Compiler..." -ForegroundColor Cyan
+        .\scripts\setup_compiler.ps1 -Quiet        if ($LASTEXITCODE -ne 0) {
+          throw "Failed to setup Digital Mars Compiler"
+        }
+    
+    - name: Build All Modules
+      shell: powershell
+      run: |
+        Write-Host "Building all modules..." -ForegroundColor Cyan
+        .\scripts\build_all.bat
+        if ($LASTEXITCODE -ne 0) {
+          throw "Build failed with exit code $LASTEXITCODE"
+        }
+        
+        # Read expected modules from project configuration
+        $config = Get-Content "config/project_config.json" | ConvertFrom-Json
+        $expectedDlls = @()
+        
+        # Extract expected DLL outputs from QSPICE modules
+        foreach ($module in $config.modules.qspice_modules.components.PSObject.Properties) {
+          $moduleConfig = $module.Value
+          if ($moduleConfig.output_dll) {
+            $expectedDlls += $moduleConfig.output_dll
+            Write-Host "Expecting: $($moduleConfig.output_dll)" -ForegroundColor Yellow
+          }
+        }
+        
+        # Verify expected DLLs were created
+        $missingDlls = @()
+        $builtDlls = @()
+        
+        foreach ($expectedDll in $expectedDlls) {
+          if (Test-Path $expectedDll) {
+            $builtDlls += Get-Item $expectedDll
+            Write-Host "✓ Found: $expectedDll" -ForegroundColor Green
+          } else {
+            $missingDlls += $expectedDll
+            Write-Host "❌ Missing: $expectedDll" -ForegroundColor Red
+          }
+        }
+        
+        if ($missingDlls.Count -gt 0) {
+          throw "Missing expected DLL modules: $($missingDlls -join ', ')"
+        }
+        
+        Write-Host "✓ Build completed successfully - Built $($builtDlls.Count)/$($expectedDlls.Count) module(s):" -ForegroundColor Green
+        foreach ($dll in $builtDlls) {
+          $size = [math]::Round($dll.Length / 1KB, 1)
+          Write-Host "  - $($dll.Name) ($size KB)" -ForegroundColor Green
+        }

@@ -1,0 +1,82 @@
+// *************************** In The Name Of God ***************************
+// * @file    c_cpp_properties.json
+// * @brief   VS Code C++ IntelliSense configuration for LLVM/Clang and DMC
+// * @author  Dr.-Ing. Hossein Abedini
+// * @date    2025-07-03
+// * Configuration for C++ language support, include paths, and compiler
+// * settings for the power electronics control library.
+// * Uses LLVM/Clang for IntelliSense and DMC for building.
+// * @note    Designed for real-time signal processing applications.
+// * @license This work is dedicated to the public domain under CC0 1.0.
+// *          Please use it for good and beneficial purposes!
+// ***************************************************************************
+
+{
+	"configurations": [
+		{
+			"name": "LLVM Clang (IntelliSense)",
+			"includePath": [
+				"${workspaceFolder}/**",
+				"C:/dm/include/**",
+				"C:/dm/stlport/stlport/**",
+				"C:/Program Files/LLVM/include/**"
+			],
+			"defines": [
+				"_DEBUG",
+				"UNICODE",
+				"_UNICODE",
+				"WIN32",
+				"_WIN32",
+				"__DMC__",
+				"__STDC__",
+				"DMC_BOOL_COMPAT"
+			],
+			"windowsSdkVersion": "10.0.19041.0",
+			"compilerPath": "C:/Program Files/LLVM/bin/clang.exe",
+			"cStandard": "c11",
+			"cppStandard": "c++11",
+			"intelliSenseMode": "windows-clang-x64",
+			"browse": {
+				"path": [
+					"${workspaceFolder}/**",
+					"C:/dm/include/**",
+					"C:/dm/stlport/stlport/**",
+					"C:/Program Files/LLVM/include/**"
+				],
+				"limitSymbolsToIncludedHeaders": false
+			}
+		},
+		{
+			"name": "Digital Mars C++ (DMC) - Build Only",
+			"includePath": [
+				"${workspaceFolder}/**",
+				"C:/dm/include/**",
+				"C:/dm/stlport/stlport/**"
+			],
+			"defines": [
+				"_DEBUG",
+				"UNICODE",
+				"_UNICODE",
+				"WIN32",
+				"_WIN32",
+				"__DMC__",
+				"__STDC__",
+				"DMC_BOOL_COMPAT"
+			],
+			"windowsSdkVersion": "10.0.19041.0",
+			"compilerPath": "C:/dm/bin/dmc.exe",
+			"cStandard": "c11",
+			"cppStandard": "c++11",
+			"intelliSenseMode": "windows-gcc-x86",
+			"browse": {
+				"path": [
+					"${workspaceFolder}/**",
+					"C:/dm/include/**",
+					"C:/dm/stlport/stlport/**"
+				],
+				"limitSymbolsToIncludedHeaders": false
+			}
+		}
+	],
+	"version": 4
+}

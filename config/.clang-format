@@ -1,3 +1,15 @@
+# *************************** In The Name Of God ***************************
+# * @file    .clang-format
+# * @brief   ClangFormat configuration for power electronics control library
+# * @author  Dr.-Ing. Hossein Abedini
+# * @date    2025-06-08
+# * Code formatting rules for consistent C++ code style across all modules
+# * in the power electronics control library.
+# * @note    Designed for real-time signal processing applications.
+# * @license This work is dedicated to the public domain under CC0 1.0.
+# *          Please use it for good and beneficial purposes!
+# ***************************************************************************
+
 ---
 Language: Cpp
 BasedOnStyle: LLVM
@@ -7,5 +19,39 @@ BreakBeforeBraces: Allman
 AllowShortIfStatementsOnASingleLine: false
 AllowShortLoopsOnASingleLine: false
 AllowShortFunctionsOnASingleLine: None
-ColumnLimit: 100
+ColumnLimit: 150
+
+# Additional formatting rules for power electronics code
+AlignConsecutiveAssignments: true
+AlignConsecutiveDeclarations: true
+AlignConsecutiveMacros: true
+AlignTrailingComments: true
+AlignOperands: true
+ReflowComments: true
+BreakBeforeBinaryOperators: NonAssignment
+BreakBeforeTernaryOperators: true
+BreakConstructorInitializers: BeforeComma
+BreakInheritanceList: BeforeComma
+ConstructorInitializerAllOnOneLineOrOnePerLine: true
+ConstructorInitializerIndentWidth: 4
+IndentCaseLabels: false
+IndentPPDirectives: BeforeHash
+KeepEmptyLinesAtTheStartOfBlocks: false
+MaxEmptyLinesToKeep: 2
+PointerAlignment: Left
+SortIncludes: true
+SortUsingDeclarations: true
+SpaceAfterCStyleCast: false
+SpaceBeforeAssignmentOperators: true
+SpaceBeforeParens: ControlStatements
+SpaceInEmptyParentheses: false
+SpacesBeforeTrailingComments: 2
+SpacesInAngles: false
+SpacesInCStyleCastParentheses: false
+SpacesInParentheses: false
+SpacesInSquareBrackets: false
+
+# Preprocessor and macro formatting
+AlignEscapedNewlines: Left
+SpacesInConditionalStatement: false
 ...

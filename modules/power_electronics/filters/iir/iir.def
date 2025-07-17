@@ -1,0 +1,11 @@
+LIBRARY "iir.dll"
+DESCRIPTION 'iir as a DLL'
+EXETYPE NT
+SUBSYSTEM WINDOWS
+CODE SHARED EXECUTE
+DATA WRITE
+EXPORTS
+iir_init
+iir_step
+iir_reset
+iir_calc_a
