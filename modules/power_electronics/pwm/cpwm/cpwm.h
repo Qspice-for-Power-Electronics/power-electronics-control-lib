@@ -52,6 +52,7 @@ extern "C"
         bool  sync_enable;      /* Enable external synchronization */
         float phase_offset;     /* Phase offset in seconds */
         float dead_time;        /* Dead time in seconds */
+        float duty_cycle;       /* Duty cycle [0.0, 1.0] */
     } cpwm_params_t;
 
     /**
@@ -108,13 +109,22 @@ extern "C"
     void cpwm_reset(cpwm_t* const p_cpwm);
 
     /**
-     * @brief   Execute one processing step of the CPWM module.
+     * @brief   Execute one processing step of the CPWM module using stored duty cycle.
      * @param   p_cpwm    Pointer to the CPWM module instance.
      * @param   t         Current time in seconds.
-     * @param   cmp       Compare value [0.0, 1.0].
      * @param   sync_in   External synchronization input.
      */
-    void cpwm_step(cpwm_t* const p_cpwm, const float t, const float cmp, const bool sync_in);
+    void cpwm_step(cpwm_t* const p_cpwm, const float t, const bool sync_in);
+
+    /**
+     * @brief   Update all PWM parameters at runtime in a single call.
+     * @param   p_cpwm      Pointer to the CPWM module instance.
+     * @param   frequency   New carrier frequency in Hz (set to 0 to keep current).
+     * @param   dead_time   New dead time in seconds (set to negative to keep current).
+     * @param   phase_offset New phase offset in seconds (set to NaN to keep current).
+     * @param   duty_cycle  New duty cycle [0.0, 1.0] (set to negative to keep current).
+     */
+    void update_parameters(cpwm_t* const p_cpwm, const float frequency, const float dead_time, const float phase_offset, const float duty_cycle);
 
 #ifdef __cplusplus
 }

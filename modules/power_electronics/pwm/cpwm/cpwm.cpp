@@ -148,6 +148,7 @@ void cpwm_init(cpwm_t* const p_cpwm, const cpwm_params_t* const p_params)
     p_cpwm->params.sync_enable      = p_params->sync_enable;
     p_cpwm->params.phase_offset     = p_params->phase_offset;
     p_cpwm->params.dead_time        = p_params->dead_time;
+    p_cpwm->params.duty_cycle       = p_params->duty_cycle;
 
     /* Calculate dead time normalization before reset to preserve values */
     apply_dead_time(p_cpwm);
@@ -171,13 +172,12 @@ void cpwm_reset(cpwm_t* const p_cpwm)
 }
 
 /**
- * @brief   Execute one processing step of the CPWM module.
+ * @brief   Execute one processing step of the CPWM module using stored duty cycle.
  * @param   p_cpwm    Pointer to the CPWM module instance.
  * @param   t         Current time in seconds.
- * @param   cmp       Compare value [0.0, 1.0].
  * @param   sync_in   External synchronization input.
  */
-void cpwm_step(cpwm_t* const p_cpwm, const float t, const float cmp, const bool sync_in)
+void cpwm_step(cpwm_t* const p_cpwm, const float t, const bool sync_in)
 {
     /* Handle synchronization reset */
     if (p_cpwm->params.sync_enable && sync_in)
@@ -189,9 +189,54 @@ void cpwm_step(cpwm_t* const p_cpwm, const float t, const float cmp, const bool 
     /* Generate center-aligned counter */
     calculate_counter_state(p_cpwm, t);
 
-    /* Calculate compare values with dead time applied */
-    calculate_compare_values(p_cpwm, cmp);
+    /* Calculate compare values with dead time applied using stored duty cycle */
+    calculate_compare_values(p_cpwm, p_cpwm->params.duty_cycle);
 
     /* Process PWM actions */
-    process_pwm_actions(p_cpwm, cmp);
+    process_pwm_actions(p_cpwm, p_cpwm->params.duty_cycle);
+}
+
+/**
+ * @brief   Update all PWM parameters at runtime in a single call.
+ * @param   p_cpwm      Pointer to the CPWM module instance.
+ * @param   frequency   New carrier frequency in Hz (set to 0 to keep current).
+ * @param   dead_time   New dead time in seconds (set to negative to keep current).
+ * @param   phase_offset New phase offset in seconds (set to NaN to keep current).
+ * @param   duty_cycle  New duty cycle [0.0, 1.0] (set to negative to keep current).
+ */
+void update_parameters(cpwm_t* const p_cpwm, const float frequency, const float dead_time, const float phase_offset, const float duty_cycle)
+{
+    bool recalc_dead_time = false;
+
+    /* Update frequency if valid */
+    if (frequency > 0.0F)
+    {
+        p_cpwm->params.Fs = frequency;
+        recalc_dead_time  = true;
+    }
+
+    /* Update dead time if valid */
+    if (dead_time >= 0.0F)
+    {
+        p_cpwm->params.dead_time = dead_time;
+        recalc_dead_time         = true;
+    }
+
+    /* Update phase offset if not NaN */
+    if (phase_offset == phase_offset) /* NaN check: NaN != NaN */
+    {
+        p_cpwm->params.phase_offset = phase_offset;
+    }
+
+    /* Update duty cycle if valid */
+    if (duty_cycle >= 0.0F && duty_cycle <= 1.0F)
+    {
+        p_cpwm->params.duty_cycle = duty_cycle;
+    }
+
+    /* Recalculate normalized dead time if frequency or dead time changed */
+    if (recalc_dead_time)
+    {
+        apply_dead_time(p_cpwm);
+    }
 }

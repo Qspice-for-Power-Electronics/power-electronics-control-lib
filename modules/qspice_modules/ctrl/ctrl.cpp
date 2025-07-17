@@ -202,7 +202,8 @@ extern "C" __declspec(dllexport) void ctrl(void** opaque, double t, union uData*
         .gate_off_voltage = 0.0F,
         .sync_enable      = false,
         .phase_offset     = 0.0F,
-        .dead_time        = 0.0F  // 0ns dead time
+        .dead_time        = 0.0F,  // 0ns dead time
+        .duty_cycle       = 0.5F   // 50% duty cycle
     };
 
     if (!mod_initialized)
@@ -216,15 +217,16 @@ extern "C" __declspec(dllexport) void ctrl(void** opaque, double t, union uData*
             .gate_off_voltage = 0.0F,
             .sync_enable      = false,
             .phase_offset     = 0.0F,
-            .dead_time        = 100e-9F  // 100ns dead time
+            .dead_time        = 100e-9F,  // 100ns dead time
+            .duty_cycle       = 0.5F      // 50% initial duty cycle
         };
         cpwm_init(&pwm_module, &cpwm_test_params);
 
         mod_initialized = true;
     }
 
-    // Update clock generator CPWM using 50% duty cycle
-    cpwm_step(&cpwm_clk, static_cast<float>(t), 0.5F, false);
+    // Update clock generator CPWM
+    cpwm_step(&cpwm_clk, static_cast<float>(t), false);
 
     // Static frequency and dead time values for PWM module
     static float const freq       = 250e3F;   // Base switching frequency
@@ -357,9 +359,6 @@ static void sample_input_signals(float V_1, float I_1, float I_1_2, float V_2, f
 static void handle_pwm_update_and_step(double t, bool& pwm_update_pending, float control_calculation_time, float PWM_UPDATE_DELAY_TIME,
                                        float calculated_duty, cpwm_t& pwm_module)
 {
-    // Static variable to store the currently active duty cycle (persists between calls)
-    static float active_duty = 0.5F;  // Initialize with default duty cycle
-
     // 4. TIME-BASED DELAY IMPLEMENTATION: Apply parameters after specified delay time
     // Check if enough time has passed since the control calculation AND update is pending
     float const current_time = static_cast<float>(t);
@@ -367,11 +366,12 @@ static void handle_pwm_update_and_step(double t, bool& pwm_update_pending, float
     {
         // 5. UPDATE: Update PWM parameters with delayed duty cycle (executed once per control cycle)
         // This simulates updating PWM registers in the microcontroller with processing delay
-        active_duty        = calculated_duty;  // Apply the new duty cycle after delay
+        // Use the new update_parameters function to update duty cycle at runtime
+        update_parameters(&pwm_module, 0.0F, -1.0F, 0.0F/0.0F, calculated_duty);  // Update only duty cycle (NaN for phase_offset)
         pwm_update_pending = false;            // Clear flag after successful update
     }
 
-    // Step the CPWM module with the currently active duty cycle (not the latest calculated one)
+    // Step the CPWM module (duty cycle is now stored internally)
     // This ensures the delay is properly simulated - PWM continues with old duty until delay expires
-    cpwm_step(&pwm_module, static_cast<float>(t), active_duty, false);
+    cpwm_step(&pwm_module, static_cast<float>(t), false);
 }
