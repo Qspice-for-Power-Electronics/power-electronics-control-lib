@@ -96,6 +96,20 @@ static void calculate_compare_values(cpwm_t* const p_cpwm, const float cmp)
     /* Clamp values to [0.0, 1.0] range - optimized clamping */
     p_cpwm->state.cmp_lead = (cmp_lead_raw > 1.0F) ? 1.0F : ((cmp_lead_raw < 0.0F) ? 0.0F : cmp_lead_raw);
     p_cpwm->state.cmp_lag  = (cmp_lag_raw > 1.0F) ? 1.0F : ((cmp_lag_raw < 0.0F) ? 0.0F : cmp_lag_raw);
+
+    /* Handle edge cases first */
+    if (p_cpwm->state.cmp_lead <= 0.0F || p_cpwm->state.cmp_lag <= 0.0F)
+    {
+        /* 0% duty cycle - force both outputs off regardless of dead time */
+        p_cpwm->state.cmp_lead = 0.0F;
+        p_cpwm->state.cmp_lag  = 0.0F;
+    }
+    else if (p_cpwm->state.cmp_lead >= 1.0F || p_cpwm->state.cmp_lag >= 1.0F)
+    {
+        /* 100% duty cycle - force both outputs on regardless of dead time */
+        p_cpwm->state.cmp_lead = 1.0F;
+        p_cpwm->state.cmp_lag  = 1.0F;
+    }
 }
 
 /**
