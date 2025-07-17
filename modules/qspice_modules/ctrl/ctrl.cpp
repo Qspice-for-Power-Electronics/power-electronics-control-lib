@@ -137,12 +137,12 @@ extern "C" __declspec(dllexport) void ctrl(void** opaque, double t, union uData*
     float const  I_2   = data[12].f;  // input
     float&       Q1A   = data[13].f;  // output
     float&       Q1B   = data[14].f;  // output
-    float&       Q2A   = data[15].f;  // output
-    float&       Q2B   = data[16].f;  // output
-    float&       Q3A   = data[17].f;  // output
-    float&       Q3B   = data[18].f;  // output
-    float&       Q4A   = data[19].f;  // output
-    float&       Q4B   = data[20].f;  // output
+    float const& Q2A   = data[15].f;  // output
+    float const& Q2B   = data[16].f;  // output
+    float const& Q3A   = data[17].f;  // output
+    float const& Q3B   = data[18].f;  // output
+    float const& Q4A   = data[19].f;  // output
+    float const& Q4B   = data[20].f;  // output
     float const& Q5    = data[21].f;  // output
     float const& Q6    = data[22].f;  // output
     float const& Q7    = data[23].f;  // output
@@ -159,8 +159,8 @@ extern "C" __declspec(dllexport) void ctrl(void** opaque, double t, union uData*
     float&       Out10 = data[34].f;  // output
     float&       Out11 = data[35].f;  // output
     float&       Out12 = data[36].f;  // output
-    float&       Out13 = data[37].f;  // output
-    float&       Out14 = data[38].f;  // output
+    float const& Out13 = data[37].f;  // output
+    float const& Out14 = data[38].f;  // output
     float const& Out15 = data[39].f;  // output
     float const& Out16 = data[40].f;  // output
     float const& Out17 = data[41].f;  // output
@@ -270,7 +270,7 @@ extern "C" __declspec(dllexport) void ctrl(void** opaque, double t, union uData*
     }
     prev_clk = cpwm_clk.outputs.period_sync;
 
-    float calculated_duty = sampled_V_1;  // Example duty cycle, replace with your control logic
+    float const calculated_duty = sampled_V_1;  // Example duty cycle, replace with your control logic
 
     // Handle PWM parameter updates and module stepping
     handle_pwm_update_and_step(t, pwm_update_pending, control_calculation_time, PWM_UPDATE_DELAY_TIME, calculated_duty, pwm_module, freq, dead_time,
