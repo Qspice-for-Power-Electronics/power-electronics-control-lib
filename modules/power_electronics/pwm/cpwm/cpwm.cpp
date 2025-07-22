@@ -18,7 +18,9 @@
 /********************************* DEFINES ***********************************/
 
 /* CPWM module default constants */
-#define CPWM_TOLERANCE (1e-4F) /* Tolerance for floating point comparisons */
+#define CPWM_TOLERANCE           (1e-4F) /* Tolerance for floating point comparisons */
+#define CPWM_WRAP_HIGH_THRESHOLD (0.9F)  /* Upper threshold for counter wrap detection */
+#define CPWM_WRAP_LOW_THRESHOLD  (0.1F)  /* Lower threshold for counter wrap detection */
 
 /**************************** PRIVATE FUNCTIONS ******************************/
 
@@ -28,12 +30,19 @@
  */
 static inline void clear_state(cpwm_state_t* const p_state)
 {
-    /* Dead time value will be preserved/recalculated by reset function */
-    p_state->dead_time_norm = 0.0F;
-
     /* Initialize compare values */
     p_state->cmp_lead = 0.0F;
     p_state->cmp_lag  = 0.0F;
+
+    /* Initialize frequency continuity tracking */
+    p_state->current_Fs               = 0.0F;
+    p_state->pending_Fs               = 0.0F;
+    p_state->frequency_change_pending = false;
+
+    /* Initialize counter tracking */
+    p_state->last_time        = 0.0F;
+    p_state->internal_counter = 0.0F;
+    p_state->prev_counter     = 0.0F;
 }
 
 /**
@@ -50,31 +59,88 @@ static inline void clear_outputs(cpwm_outputs_t* const p_outputs, const float ga
 }
 
 /**
- * @brief   Calculate counter state based on center-aligned (triangular) counter.
+ * @brief   Calculate counter state based on center-aligned (triangular) counter with continuity.
  * @param   p_cpwm          Pointer to CPWM module instance.
  * @param   t               Current time in seconds.
  */
 static void calculate_counter_state(cpwm_t* const p_cpwm, const float t)
 {
-    /* Phase offset is applied to the carrier itself */
-    float const carrier_raw = (t + p_cpwm->params.phase_offset) * p_cpwm->params.Fs;
-    float const carrier_mod = carrier_raw - floorf(carrier_raw);
+    /* Handle initial setup on first call */
+    if (p_cpwm->state.current_Fs == 0.0F)
+    {
+        p_cpwm->state.current_Fs       = p_cpwm->params.Fs;
+        p_cpwm->state.last_time        = t;
+        p_cpwm->state.internal_counter = 0.0F;
+    }
+
+    /* Calculate time step with protection against time going backward */
+    float dt = t - p_cpwm->state.last_time;
+    if (dt < 0.0F)
+    {
+        dt = 0.0F; /* Protect against time going backward */
+    }
+    p_cpwm->state.last_time = t;
+
+    /* Update internal counter based on current frequency */
+    p_cpwm->state.internal_counter += dt * p_cpwm->state.current_Fs;
+
+    /* Track if counter wrapped around for period_sync detection */
+    bool counter_wrapped = false;
+
+    /* Ensure counter stays in [0,1] range - equivalent to modulo 1.0 operation */
+    if (p_cpwm->state.internal_counter >= 1.0F)
+    {
+        counter_wrapped = true;
+        p_cpwm->state.internal_counter -= floorf(p_cpwm->state.internal_counter);
+    }
+
+    /* Apply temporary frequency for phase shift at period boundaries */
+    if (counter_wrapped)
+    {
+        /* Check if we need to apply a phase shift */
+        if (p_cpwm->params.phase_offset != 0.0F)
+        {
+            /* Calculate the temporary frequency needed to achieve desired phase shift in one cycle
+               Normal period = 1/Fs
+               Shifted period = Normal period + phase_offset
+               Temp frequency = 1/(Normal period + phase_offset) = 1/(1/Fs + phase_offset) = Fs/(1 + Fs*phase_offset) */
+            float const normal_freq = p_cpwm->params.Fs;
+            float const temp_freq   = normal_freq / (1.0F + normal_freq * p_cpwm->params.phase_offset);
+
+            /* Apply temporary frequency for this cycle */
+            p_cpwm->state.current_Fs = temp_freq;
+
+            /* Mark that we need to restore frequency next cycle */
+            p_cpwm->state.pending_Fs               = normal_freq;
+            p_cpwm->state.frequency_change_pending = true;
+
+            /* Clear phase offset since it's now applied */
+            p_cpwm->params.phase_offset = 0.0F;
+        }
+        /* Restore normal frequency after temporary phase shift cycle */
+        else if (p_cpwm->state.frequency_change_pending)
+        {
+            p_cpwm->state.current_Fs               = p_cpwm->state.pending_Fs;
+            p_cpwm->state.frequency_change_pending = false;
+        }
+    }
+
+    /* Use the continuous internal counter directly for triangular carrier generation */
+    float carrier_mod = p_cpwm->state.internal_counter;
 
     /* Generate center-aligned (triangular) carrier */
     p_cpwm->outputs.counter_normalized = fabsf(2.0F * (carrier_mod - 0.5F));
 
-    /* Set period_sync flag for start of period - reuse carrier_mod instead of fmodf */
-    p_cpwm->outputs.period_sync = (carrier_mod < CPWM_TOLERANCE);
-}
+    /* Enhanced period_sync detection - will trigger even with large time steps:
+       1. If counter wrapped around from one cycle to the next
+       2. OR if we're near the start of period (within tolerance)
+       3. OR if we crossed over from high to low threshold (handles very large steps) */
+    p_cpwm->outputs.period_sync =
+        counter_wrapped || (carrier_mod < CPWM_TOLERANCE)
+        || (p_cpwm->state.prev_counter > CPWM_WRAP_HIGH_THRESHOLD && p_cpwm->state.internal_counter < CPWM_WRAP_LOW_THRESHOLD);
 
-/**
- * @brief   Apply dead time normalization (called only during initialization).
- * @param   p_cpwm  Pointer to CPWM module instance.
- */
-static void apply_dead_time(cpwm_t* const p_cpwm)
-{
-    /* Convert dead time to normalized units */
-    p_cpwm->state.dead_time_norm = p_cpwm->params.dead_time * p_cpwm->params.Fs;
+    /* Store current counter for next iteration */
+    p_cpwm->state.prev_counter = p_cpwm->state.internal_counter;
 }
 
 /**
@@ -84,8 +150,10 @@ static void apply_dead_time(cpwm_t* const p_cpwm)
  */
 static void calculate_compare_values(cpwm_t* const p_cpwm, const float cmp)
 {
-    /* Pre-calculate half dead time value to avoid repeated multiplication */
-    float const half_dead_time = p_cpwm->state.dead_time_norm * 0.5F;
+    /* Calculate current normalized dead time based on active frequency */
+    /* Dead time in seconds remains constant, but normalized value changes with frequency */
+    float const current_dead_time_norm = p_cpwm->params.dead_time * p_cpwm->state.current_Fs;
+    float const half_dead_time         = current_dead_time_norm * 0.5F;
 
     /* Calculate rising edge values (add half of dead time) */
     float const cmp_lead_raw = cmp + half_dead_time;
@@ -164,8 +232,14 @@ void cpwm_init(cpwm_t* const p_cpwm, const cpwm_params_t* const p_params)
     p_cpwm->params.dead_time        = p_params->dead_time;
     p_cpwm->params.duty_cycle       = p_params->duty_cycle;
 
-    /* Calculate dead time normalization before reset to preserve values */
-    apply_dead_time(p_cpwm);
+    /* Initialize continuity-related state variables */
+    p_cpwm->state.current_Fs               = p_params->Fs;
+    p_cpwm->state.pending_Fs               = p_params->Fs;
+    p_cpwm->state.frequency_change_pending = false;
+    p_cpwm->state.last_time                = 0.0F;
+    p_cpwm->state.internal_counter         = 0.0F;
+    p_cpwm->state.prev_counter             = 0.0F;
+
     cpwm_reset(p_cpwm);
 }
 
@@ -175,14 +249,24 @@ void cpwm_init(cpwm_t* const p_cpwm, const cpwm_params_t* const p_params)
  */
 void cpwm_reset(cpwm_t* const p_cpwm)
 {
-    /* Store dead time value before clearing */
-    float const dead_time_norm = p_cpwm->state.dead_time_norm;
+    /* Store values that need to be preserved */
+    float const current_Fs               = p_cpwm->state.current_Fs;
+    float const pending_Fs               = p_cpwm->state.pending_Fs;
+    bool const  frequency_change_pending = p_cpwm->state.frequency_change_pending;
+    float const last_time                = p_cpwm->state.last_time;
+    float const internal_counter         = p_cpwm->state.internal_counter;
+    float const prev_counter             = p_cpwm->state.prev_counter;
 
     clear_state(&p_cpwm->state);
     clear_outputs(&p_cpwm->outputs, p_cpwm->params.gate_off_voltage);
 
-    /* Restore dead time value */
-    p_cpwm->state.dead_time_norm = dead_time_norm;
+    /* Restore preserved values */
+    p_cpwm->state.current_Fs               = current_Fs;
+    p_cpwm->state.pending_Fs               = pending_Fs;
+    p_cpwm->state.frequency_change_pending = frequency_change_pending;
+    p_cpwm->state.last_time                = last_time;
+    p_cpwm->state.internal_counter         = internal_counter;
+    p_cpwm->state.prev_counter             = prev_counter;
 }
 
 /**
@@ -196,8 +280,9 @@ void cpwm_step(cpwm_t* const p_cpwm, const float t, const bool sync_in)
     /* Handle synchronization reset */
     if (p_cpwm->params.sync_enable && sync_in)
     {
-        /* Reset the phase to synchronize with external signal */
-        p_cpwm->params.phase_offset = t;
+        /* Reset the internal counter to synchronize with external signal */
+        p_cpwm->state.internal_counter = 0.0F;
+        p_cpwm->state.last_time        = t;
     }
 
     /* Generate center-aligned counter */
@@ -220,23 +305,31 @@ void cpwm_step(cpwm_t* const p_cpwm, const float t, const bool sync_in)
  */
 void update_parameters(cpwm_t* const p_cpwm, const float frequency, const float dead_time, const float phase_offset, const float duty_cycle)
 {
-    bool recalc_dead_time = false;
-
-    /* Update frequency if valid */
+    /* Queue frequency change for period boundary to maintain continuity */
     if (frequency > 0.0F)
     {
+        /* Update the parameter for initialization purposes */
         p_cpwm->params.Fs = frequency;
-        recalc_dead_time  = true;
+
+        /* Queue the frequency change to apply at period boundary */
+        p_cpwm->state.pending_Fs               = frequency;
+        p_cpwm->state.frequency_change_pending = true;
+
+        /* If state is not initialized yet, apply directly */
+        if (p_cpwm->state.current_Fs == 0.0F)
+        {
+            p_cpwm->state.current_Fs               = frequency;
+            p_cpwm->state.frequency_change_pending = false;
+        }
     }
 
     /* Update dead time if valid */
     if (dead_time >= 0.0F)
     {
         p_cpwm->params.dead_time = dead_time;
-        recalc_dead_time         = true;
     }
 
-    /* Update phase offset if not NaN */
+    /* Phase offset changes are applied immediately */
     if (phase_offset == phase_offset) /* NaN check: NaN != NaN */
     {
         p_cpwm->params.phase_offset = phase_offset;
@@ -246,11 +339,5 @@ void update_parameters(cpwm_t* const p_cpwm, const float frequency, const float 
     if (duty_cycle >= 0.0F && duty_cycle <= 1.0F)
     {
         p_cpwm->params.duty_cycle = duty_cycle;
-    }
-
-    /* Recalculate normalized dead time if frequency or dead time changed */
-    if (recalc_dead_time)
-    {
-        apply_dead_time(p_cpwm);
     }
 }

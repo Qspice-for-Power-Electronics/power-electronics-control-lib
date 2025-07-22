@@ -41,8 +41,9 @@ extern "C"
      * gate_on_voltage: output voltage when PWM is ON [0.0, 24.0]
      * gate_off_voltage: output voltage when PWM is OFF [0.0, 24.0]
      * sync_enable: enable external synchronization
-     * phase_offset: phase offset in seconds
+     * phase_offset: phase offset in seconds (applied once at next period boundary)
      * dead_time: dead time in seconds
+     * duty_cycle: duty cycle [0.0, 1.0]
      */
     typedef struct
     {
@@ -50,7 +51,7 @@ extern "C"
         float gate_on_voltage;  /* Output voltage when PWM is ON [0.0, 24.0] */
         float gate_off_voltage; /* Output voltage when PWM is OFF [0.0, 24.0] */
         bool  sync_enable;      /* Enable external synchronization */
-        float phase_offset;     /* Phase offset in seconds */
+        float phase_offset;     /* Phase offset in seconds (applied once, then cleared) */
         float dead_time;        /* Dead time in seconds */
         float duty_cycle;       /* Duty cycle [0.0, 1.0] */
     } cpwm_params_t;
@@ -60,12 +61,19 @@ extern "C"
      */
     typedef struct
     {
-        /* Normalized dead time value (calculated once during init) */
-        float dead_time_norm; /* Normalized dead time */
-
         /* Pre-calculated compare values with dead time applied */
         float cmp_lead; /* Compare leading edge value */
         float cmp_lag;  /* Compare lagging edge value */
+
+        /* Frequency continuity tracking */
+        float current_Fs;               /* Current active frequency */
+        float pending_Fs;               /* Pending frequency change */
+        bool  frequency_change_pending; /* Flag for pending frequency change */
+
+        /* Internal counter tracking */
+        float last_time;        /* Last time step used for internal calculations */
+        float internal_counter; /* Internal counter for continuous tracking */
+        float prev_counter;     /* Previous counter value for wraparound detection */
     } cpwm_state_t;
 
     /**
