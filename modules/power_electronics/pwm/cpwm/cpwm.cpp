@@ -169,9 +169,9 @@ static void calculate_counter_state(cpwm_t* const p_cpwm, const float t)
 /**
  * @brief   Calculate compare values with dead time applied.
  * @param   p_cpwm  Pointer to CPWM module instance.
- * @param   cmp     Compare value [0.0, 1.0].
+ * @param   duty_cycle     Compare value [0.0, 1.0].
  */
-static void calculate_compare_values(cpwm_t* const p_cpwm, const float cmp)
+static void calculate_compare_values(cpwm_t* const p_cpwm, const float duty_cycle)
 {
     /* Calculate current normalized dead time based on active frequency */
     /* Dead time in seconds remains constant, but normalized value changes with frequency */
@@ -179,10 +179,10 @@ static void calculate_compare_values(cpwm_t* const p_cpwm, const float cmp)
     float const half_dead_time         = current_dead_time_norm * 0.5F;
 
     /* Calculate rising edge values (add half of dead time) */
-    float const cmp_lead_raw = cmp + half_dead_time;
+    float const cmp_lead_raw = duty_cycle + half_dead_time;
 
     /* Calculate falling edge values (subtract half of dead time) */
-    float const cmp_lag_raw = cmp - half_dead_time;
+    float const cmp_lag_raw = duty_cycle - half_dead_time;
 
     /* Clamp values to [0.0, 1.0] range - optimized clamping */
     p_cpwm->state.cmp_lead = (cmp_lead_raw > 1.0F) ? 1.0F : ((cmp_lead_raw < 0.0F) ? 0.0F : cmp_lead_raw);
@@ -191,13 +191,13 @@ static void calculate_compare_values(cpwm_t* const p_cpwm, const float cmp)
     /* Handle edge cases first */
     if (p_cpwm->state.cmp_lead <= 0.0F || p_cpwm->state.cmp_lag <= 0.0F)
     {
-        /* 0% duty cycle - force both outputs off regardless of dead time */
+        /* 0% duty_cycle cycle - force both outputs off regardless of dead time */
         p_cpwm->state.cmp_lead = 0.0F;
         p_cpwm->state.cmp_lag  = 0.0F;
     }
     else if (p_cpwm->state.cmp_lead >= 1.0F || p_cpwm->state.cmp_lag >= 1.0F)
     {
-        /* 100% duty cycle - force both outputs on regardless of dead time */
+        /* 100% duty_cycle cycle - force both outputs on regardless of dead time */
         p_cpwm->state.cmp_lead = 1.0F;
         p_cpwm->state.cmp_lag  = 1.0F;
     }
@@ -206,9 +206,8 @@ static void calculate_compare_values(cpwm_t* const p_cpwm, const float cmp)
 /**
  * @brief   Process PWM actions using simplified comparison logic with dead time.
  * @param   p_cpwm  Pointer to CPWM module instance.
- * @param   cmp     Compare value.
  */
-static void process_pwm_actions(cpwm_t* const p_cpwm, const float cmp)
+static void process_pwm_actions(cpwm_t* const p_cpwm)
 {
     /* Use pre-calculated compare values from state */
     float const cmp_lead = p_cpwm->state.cmp_lead;
@@ -296,7 +295,7 @@ void cpwm_reset(cpwm_t* const p_cpwm)
 }
 
 /**
- * @brief   Execute one processing step of the CPWM module using stored duty cycle.
+ * @brief   Execute one processing step of the CPWM module using stored duty_cycle cycle.
  * @param   p_cpwm    Pointer to the CPWM module instance.
  * @param   t         Current time in seconds.
  * @param   sync_in   External synchronization input.
@@ -314,11 +313,11 @@ void cpwm_step(cpwm_t* const p_cpwm, const float t, const bool sync_in)
     /* Generate center-aligned counter */
     calculate_counter_state(p_cpwm, t);
 
-    /* Calculate compare values with dead time applied using stored duty cycle */
-    calculate_compare_values(p_cpwm, p_cpwm->params.duty_cycle);
+    /* Calculate compare values with dead time applied using stored duty_cycle cycle */
+    calculate_compare_values(p_cpwm, 1.0f - p_cpwm->params.duty_cycle);
 
     /* Process PWM actions */
-    process_pwm_actions(p_cpwm, p_cpwm->params.duty_cycle);
+    process_pwm_actions(p_cpwm);
 }
 
 /**
@@ -327,7 +326,7 @@ void cpwm_step(cpwm_t* const p_cpwm, const float t, const bool sync_in)
  * @param   frequency   New carrier frequency in Hz (set to 0 to keep current).
  * @param   dead_time   New dead time in seconds (set to negative to keep current).
  * @param   phase_offset New phase offset in seconds (set to NaN to keep current).
- * @param   duty_cycle  New duty cycle [0.0, 1.0] (set to negative to keep current).
+ * @param   duty_cycle  New duty_cycle cycle [0.0, 1.0] (set to negative to keep current).
  */
 void update_parameters(cpwm_t* const p_cpwm, const float frequency, const float dead_time, const float phase_offset, const float duty_cycle)
 {
@@ -362,7 +361,7 @@ void update_parameters(cpwm_t* const p_cpwm, const float frequency, const float 
         p_cpwm->params.phase_offset = phase_offset;
     }
 
-    /* Update duty cycle if valid */
+    /* Update duty_cycle cycle if valid */
     if (duty_cycle >= 0.0F && duty_cycle <= 1.0F)
     {
         p_cpwm->params.duty_cycle = duty_cycle;
