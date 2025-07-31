@@ -99,8 +99,8 @@ union uData
  * This function samples all analog input signals that would typically be
  * sampled by ADCs in a microcontroller interrupt service routine.
  */
-static void sample_input_signals(float V_1, float I_1, float I_1_2, float V_2, float I_2, float I_2_2, float& sampled_V_1, float& sampled_I_1,
-                                 float& sampled_I_1_2, float& sampled_V_2, float& sampled_I_2, float& sampled_I_2_2);
+static void sample_input_signals(float V_1, float I_1, float I_1_2, float V_2, float I_2, float I_2_2, float& sampled_V_in, float& sampled_I_L,
+                                 float& sampled_I_1_2, float& sampled_V_out, float& sampled_I_2, float& sampled_I_2_2);
 
 /**
  * @brief Handles time-based PWM parameter updates and module stepping
@@ -191,19 +191,22 @@ extern "C" __declspec(dllexport) void ctrl(void** opaque, double t, union uData*
     (void)I_2;
 
     // Module initialization code
+    static bool   prev_clk = false;
     static cpwm_t cpwm_clk;    // Clock generator CPWM
     static cpwm_t pwm_module;  // Single PWM module for testing
-    static bool   mod_initialized = false;
+    static bool   mod_initialized          = false;
+    static float  control_calculation_time = 0.0F;   // Timestamp when control was last calculated
+    static bool   pwm_update_pending       = false;  // Flag to track if PWM update is pending
 
     // Initialize clock generator CPWM (for digital controller timing)
     cpwm_params_t const cpwm_clk_params = {
-        .Fs               = 50000.0F,  // 50kHz frequency
+        .Fs               = 50e3F,  // 50kHz frequency
         .gate_on_voltage  = 0.0F,
         .gate_off_voltage = 0.0F,
         .sync_enable      = false,
-        .phase_offset     = 0.0F,
-        .dead_time        = 0.0F,  // 0ns dead time
-        .duty_cycle       = 0.5F   // 50% duty cycle
+        .phase_offset     = DEGREES_TO_PHASE_OFFSET(0.0f, cpwm_clk_params.Fs),  // 0 degrees phase offset
+        .dead_time        = 0.0F,                                               // 0ns dead time
+        .duty_cycle       = 0.5F                                                // 50% duty cycle
     };
 
     if (!mod_initialized)
@@ -212,57 +215,54 @@ extern "C" __declspec(dllexport) void ctrl(void** opaque, double t, union uData*
 
         // Initialize single test CPWM module
         cpwm_params_t const cpwm_test_params = {
-            .Fs               = 250e3F,  // 250kHz frequency
+            .Fs               = 100e3F,  // 100kHz frequency
             .gate_on_voltage  = 1.0F,
             .gate_off_voltage = 0.0F,
             .sync_enable      = false,
-            .phase_offset     = 0.0F,
-            .dead_time        = 100e-9F,  // 100ns dead time
-            .duty_cycle       = 0.5F      // 50% initial duty cycle
+            .phase_offset     = DEGREES_TO_PHASE_OFFSET(0.0f, cpwm_test_params.Fs),  // 0 degrees phase offset
+            .dead_time        = 200e-9F,                                             // 200ns dead time
+            .duty_cycle       = 0.0F                                                 // 0% initial duty cycle
         };
         cpwm_init(&pwm_module, &cpwm_test_params);
 
         mod_initialized = true;
     }
 
+    // PWM update delay configuration
+    // Change PWM_UPDATE_DELAY_TIME to adjust the delay between control calculation and PWM update
+    // Delay is specified in seconds (e.g., 60e-6F = 60 microseconds)
+    static const float PWM_UPDATE_DELAY_TIME = 0.5F / cpwm_clk_params.Fs;  // 10 microseconds delay (0.5x the 20μs period)
+
     // Update clock generator CPWM
     cpwm_step(&cpwm_clk, static_cast<float>(t), false);
 
     // Static frequency and dead time values for PWM module
-    static float const freq       = 250e3F;   // Base switching frequency
-    static float const dead_time  = 100e-9F;  // Dead time for PWM
-    static float const duty_cycle = 0.5F;     // Duty cycle (0.0 to 1.0)
-    static float const theta_deg  = 30.0F;    // Phase angle in degrees
-
-    // Calculate phase offset from theta parameter
-    static float const phase_offset = DEGREES_TO_PHASE_OFFSET(theta_deg, freq);
+    static float const freq         = pwm_module.params.Fs;            // Base switching frequency
+    static float const dead_time    = pwm_module.params.dead_time;     // Dead time for PWM
+    static float const duty_cycle   = pwm_module.params.duty_cycle;    // Duty cycle (0.0 to 1.0)
+    static float const phase_offset = pwm_module.params.phase_offset;  // Phase offset in seconds (180 degrees at 100kHz)
 
     // Rising edge detection for ClkOut - simulates microcontroller interrupt
-    static bool  prev_clk      = false;
-    static float sampled_V_1   = 0.0F;  // Sampled V_1 voltage
-    static float sampled_I_1   = 0.0F;  // Sampled I_1 current
-    static float sampled_I_1_2 = 0.0F;  // Sampled I_1_2 current
-    static float sampled_V_2   = 0.0F;  // Sampled V_2 voltage
-    static float sampled_I_2   = 0.0F;  // Sampled I_2 current
-    static float sampled_I_2_2 = 0.0F;  // Sampled I_2_2 current
+    static float sampled_V_in  = 48.0F;  // Sampled V_1 voltage
+    static float sampled_I_L   = 0.0F;   // Sampled I_1 current
+    static float sampled_V_out = 0.0F;   // Sampled V_2 voltage
 
-    // PWM update delay configuration
-    // Change PWM_UPDATE_DELAY_TIME to adjust the delay between control calculation and PWM update
-    // Delay is specified in seconds (e.g., 60e-6F = 60 microseconds)
-    static const float PWM_UPDATE_DELAY_TIME    = 0.5F / cpwm_clk_params.Fs;  // 10 microseconds delay (0.5x the 20μs period)
-    static float       control_calculation_time = 0.0F;                       // Timestamp when control was last calculated
-    static bool        pwm_update_pending       = false;                      // Flag to track if PWM update is pending
+    static float sampled_I_1_2 = 0.0F;  // Sampled I_1_2 current
+    static float sampled_I_2   = 0.0F;  // Sampled I_2 current
+    static float sampled_I_2_2 = 0.0F;  // Sampled I_2_2
+
+    static float calculated_duty = 0.0f;  // Example duty cycle, replace with your control logic
 
     if (cpwm_clk.outputs.period_sync && !prev_clk)
     {
         /* === INTERRUPT SERVICE ROUTINE SIMULATION === */
 
         // 1. SAMPLING: Sample input signals (simulates ADC sampling in ISR)
-        sample_input_signals(V_1, I_1, I_1_2, V_2, I_2, I_2_2, sampled_V_1, sampled_I_1, sampled_I_1_2, sampled_V_2, sampled_I_2, sampled_I_2_2);
+        sample_input_signals(V_1, I_1, I_1_2, V_2, I_2, I_2_2, sampled_V_in, sampled_I_L, sampled_I_1_2, sampled_V_out, sampled_I_2, sampled_I_2_2);
 
         // 2. CONTROL: Execute control algorithms based on sampled values
-        // Example: Simple control logic using sampled input In1
-        Out6 = In1 * 0.8F;  // Example: scaled input to output
+        const float vout_ref = 10.0F;                    // Example control signal based on V_1
+        calculated_duty      = vout_ref / sampled_V_in;  // Example duty cycle, replace with your control logic
 
         // 3. TIMESTAMP: Record when this control calculation was made
         control_calculation_time = static_cast<float>(t);
@@ -270,7 +270,6 @@ extern "C" __declspec(dllexport) void ctrl(void** opaque, double t, union uData*
     }
     prev_clk = cpwm_clk.outputs.period_sync;
 
-    float const calculated_duty = sampled_V_1;  // Example duty cycle, replace with your control logic
 
     // Handle PWM parameter updates and module stepping
     handle_pwm_update_and_step(t, pwm_update_pending, control_calculation_time, PWM_UPDATE_DELAY_TIME, calculated_duty, pwm_module, freq, dead_time,
@@ -284,7 +283,7 @@ extern "C" __declspec(dllexport) void ctrl(void** opaque, double t, union uData*
     // Clock generator CPWM outputs
     Out1 = cpwm_clk.outputs.counter_normalized;
     Out2 = static_cast<float>(cpwm_clk.outputs.period_sync);
-    Out3 = sampled_V_1;                             // Sampled V_1 voltage for debugging
+    Out3 = sampled_I_L;                             // Sampled I_L current for debugging
     Out4 = static_cast<float>(pwm_update_pending);  // PWM update pending flag
 
     // Debug timing information
@@ -319,22 +318,22 @@ extern "C" __declspec(dllexport) void ctrl(void** opaque, double t, union uData*
  * @param V_2 DC voltage input
  * @param I_2 DC current input
  * @param I_2_2 Tank DC current input
- * @param sampled_V_1 Reference to store sampled V_1 voltage
- * @param sampled_I_1 Reference to store sampled I_1 current
+ * @param sampled_V_in Reference to store sampled V_1 voltage
+ * @param sampled_I_L Reference to store sampled I_1 current
  * @param sampled_I_1_2 Reference to store sampled I_1_2 current
- * @param sampled_V_2 Reference to store sampled V_2 voltage
+ * @param sampled_V_out Reference to store sampled V_2 voltage
  * @param sampled_I_2 Reference to store sampled I_2 current
  * @param sampled_I_2_2 Reference to store sampled I_2_2 current
  */
-static void sample_input_signals(float V_1, float I_1, float I_1_2, float V_2, float I_2, float I_2_2, float& sampled_V_1, float& sampled_I_1,
-                                 float& sampled_I_1_2, float& sampled_V_2, float& sampled_I_2, float& sampled_I_2_2)
+static void sample_input_signals(float V_1, float I_1, float I_1_2, float V_2, float I_2, float I_2_2, float& sampled_V_in, float& sampled_I_L,
+                                 float& sampled_I_1_2, float& sampled_V_out, float& sampled_I_2, float& sampled_I_2_2)
 {
     // Sample all analog input signals
     // In a real microcontroller, these would be ADC readings with proper scaling
-    sampled_V_1   = V_1;    // V_1 voltage
-    sampled_I_1   = I_1;    // I_1 current
+    sampled_V_in  = V_1;    // V_1 voltage
+    sampled_I_L   = I_1;    // I_1 current
     sampled_I_1_2 = I_1_2;  // I_1_2 current
-    sampled_V_2   = V_2;    // V_2 voltage
+    sampled_V_out = V_2;    // V_2 voltage
     sampled_I_2   = I_2;    // I_2 current
     sampled_I_2_2 = I_2_2;  // I_2_2 current
 
