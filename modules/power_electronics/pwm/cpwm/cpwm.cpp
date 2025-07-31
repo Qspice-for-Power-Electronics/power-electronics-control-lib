@@ -169,9 +169,9 @@ static void calculate_counter_state(cpwm_t* const p_cpwm, const float t)
 /**
  * @brief   Calculate compare values with dead time applied.
  * @param   p_cpwm  Pointer to CPWM module instance.
- * @param   duty_cycle     Compare value [0.0, 1.0].
+ * @param   cmp  Compare value [0.0, 1.0].
  */
-static void calculate_compare_values(cpwm_t* const p_cpwm, const float duty_cycle)
+static void calculate_compare_values(cpwm_t* const p_cpwm, const float cmp)
 {
     /* Calculate current normalized dead time based on active frequency */
     /* Dead time in seconds remains constant, but normalized value changes with frequency */
@@ -179,10 +179,10 @@ static void calculate_compare_values(cpwm_t* const p_cpwm, const float duty_cycl
     float const half_dead_time         = current_dead_time_norm * 0.5F;
 
     /* Calculate rising edge values (add half of dead time) */
-    float const cmp_lead_raw = duty_cycle + half_dead_time;
+    float const cmp_lead_raw = cmp + half_dead_time;
 
     /* Calculate falling edge values (subtract half of dead time) */
-    float const cmp_lag_raw = duty_cycle - half_dead_time;
+    float const cmp_lag_raw = cmp - half_dead_time;
 
     /* Clamp values to [0.0, 1.0] range - optimized clamping */
     p_cpwm->state.cmp_lead = (cmp_lead_raw > 1.0F) ? 1.0F : ((cmp_lead_raw < 0.0F) ? 0.0F : cmp_lead_raw);
