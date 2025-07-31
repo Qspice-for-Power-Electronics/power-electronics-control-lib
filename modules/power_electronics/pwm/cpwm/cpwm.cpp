@@ -151,8 +151,8 @@ static void calculate_counter_state(cpwm_t* const p_cpwm, const float t)
     /* Use the continuous internal counter directly for triangular carrier generation */
     float carrier_mod = p_cpwm->state.internal_counter;
 
-    /* Generate center-aligned (triangular) carrier */
-    p_cpwm->outputs.counter_normalized = fabsf(2.0F * (carrier_mod - 0.5F));
+    /* Generate center-aligned (triangular) carrier: 0 → 1 → 0 → 1 pattern */
+    p_cpwm->outputs.counter_normalized = 1.0F - fabsf(2.0F * (carrier_mod - 0.5F));
 
     /* Enhanced period_sync detection - will trigger even with large time steps:
        1. If counter wrapped around from one cycle to the next
