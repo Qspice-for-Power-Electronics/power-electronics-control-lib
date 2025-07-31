@@ -39,6 +39,9 @@ static inline void clear_state(cpwm_state_t* const p_state)
     p_state->pending_Fs               = 0.0F;
     p_state->frequency_change_pending = false;
 
+    /* Initialize phase tracking */
+    p_state->cumulative_phase_applied = 0.0F;
+
     /* Initialize counter tracking */
     p_state->last_time        = 0.0F;
     p_state->internal_counter = 0.0F;
@@ -97,31 +100,51 @@ static void calculate_counter_state(cpwm_t* const p_cpwm, const float t)
     /* Apply temporary frequency for phase shift at period boundaries */
     if (counter_wrapped)
     {
-        /* Check if we need to apply a phase shift */
-        if (p_cpwm->params.phase_offset != 0.0F)
-        {
-            /* Calculate the temporary frequency needed to achieve desired phase shift in one cycle
-               Normal period = 1/Fs
-               Shifted period = Normal period + phase_offset
-               Temp frequency = 1/(Normal period + phase_offset) = 1/(1/Fs + phase_offset) = Fs/(1 + Fs*phase_offset) */
-            float const normal_freq = p_cpwm->params.Fs;
-            float const temp_freq   = normal_freq / (1.0F + normal_freq * p_cpwm->params.phase_offset);
-
-            /* Apply temporary frequency for this cycle */
-            p_cpwm->state.current_Fs = temp_freq;
-
-            /* Mark that we need to restore frequency next cycle */
-            p_cpwm->state.pending_Fs               = normal_freq;
-            p_cpwm->state.frequency_change_pending = true;
-
-            /* Clear phase offset since it's now applied */
-            p_cpwm->params.phase_offset = 0.0F;
-        }
-        /* Restore normal frequency after temporary phase shift cycle */
-        else if (p_cpwm->state.frequency_change_pending)
+        /* First priority: Restore normal frequency after temporary phase shift cycle */
+        if (p_cpwm->state.frequency_change_pending)
         {
             p_cpwm->state.current_Fs               = p_cpwm->state.pending_Fs;
             p_cpwm->state.frequency_change_pending = false;
+        }
+        /* Second priority: Check if we need to apply a phase shift */
+        else
+        {
+            /* Calculate the phase difference to apply
+               Only apply the difference between requested and already applied phase */
+            float const phase_difference = p_cpwm->params.phase_offset - p_cpwm->state.cumulative_phase_applied;
+
+            if (fabsf(phase_difference) > 1e-9F) /* Only apply if difference is significant */
+            {
+                /* Calculate the temporary frequency needed to achieve desired phase shift in one cycle
+                   For phase advancement: shorter period = higher frequency
+                   For phase delay: longer period = lower frequency
+
+                   Normal period = 1/Fs
+                   Phase difference in time = phase_difference (already in seconds)
+                   Shifted period = Normal period - phase_difference (subtract for advancement, add for delay)
+                   Temp frequency = 1/(Normal period - phase_difference) = Fs/(1 - Fs*phase_difference)
+
+                   HOW THE PHASE SHIFT WORKS:
+                   - Normal cycle time: T = 1/Fs = 10μs (for 100kHz)
+                   - For +90° phase advance at 100kHz: phase_difference = +2.5μs
+                   - Shortened cycle: T_short = 10μs - 2.5μs = 7.5μs
+                   - Temp frequency: f_temp = 1/7.5μs = 133.33kHz (33% higher)
+                   - After this ONE fast cycle, we return to normal 100kHz
+                   - Result: The PWM output is now 90° (2.5μs) ahead of where it would have been
+                   - This creates a smooth phase shift without abrupt counter jumps */
+                float const normal_freq = p_cpwm->params.Fs;
+                float const temp_freq   = normal_freq / (1.0F - normal_freq * phase_difference);
+
+                /* Apply temporary frequency for this cycle */
+                p_cpwm->state.current_Fs = temp_freq;
+
+                /* Mark that we need to restore frequency next cycle */
+                p_cpwm->state.pending_Fs               = normal_freq;
+                p_cpwm->state.frequency_change_pending = true;
+
+                /* Update cumulative phase applied */
+                p_cpwm->state.cumulative_phase_applied = p_cpwm->params.phase_offset;
+            }
         }
     }
 
@@ -236,6 +259,7 @@ void cpwm_init(cpwm_t* const p_cpwm, const cpwm_params_t* const p_params)
     p_cpwm->state.current_Fs               = p_params->Fs;
     p_cpwm->state.pending_Fs               = p_params->Fs;
     p_cpwm->state.frequency_change_pending = false;
+    p_cpwm->state.cumulative_phase_applied = 0.0F;
     p_cpwm->state.last_time                = 0.0F;
     p_cpwm->state.internal_counter         = 0.0F;
     p_cpwm->state.prev_counter             = 0.0F;
@@ -253,6 +277,7 @@ void cpwm_reset(cpwm_t* const p_cpwm)
     float const current_Fs               = p_cpwm->state.current_Fs;
     float const pending_Fs               = p_cpwm->state.pending_Fs;
     bool const  frequency_change_pending = p_cpwm->state.frequency_change_pending;
+    float const cumulative_phase_applied = p_cpwm->state.cumulative_phase_applied;
     float const last_time                = p_cpwm->state.last_time;
     float const internal_counter         = p_cpwm->state.internal_counter;
     float const prev_counter             = p_cpwm->state.prev_counter;
@@ -264,6 +289,7 @@ void cpwm_reset(cpwm_t* const p_cpwm)
     p_cpwm->state.current_Fs               = current_Fs;
     p_cpwm->state.pending_Fs               = pending_Fs;
     p_cpwm->state.frequency_change_pending = frequency_change_pending;
+    p_cpwm->state.cumulative_phase_applied = cumulative_phase_applied;
     p_cpwm->state.last_time                = last_time;
     p_cpwm->state.internal_counter         = internal_counter;
     p_cpwm->state.prev_counter             = prev_counter;
@@ -329,9 +355,10 @@ void update_parameters(cpwm_t* const p_cpwm, const float frequency, const float 
         p_cpwm->params.dead_time = dead_time;
     }
 
-    /* Phase offset changes are applied immediately */
+    /* Phase offset changes are applied immediately - always update the target phase */
     if (phase_offset == phase_offset) /* NaN check: NaN != NaN */
     {
+        /* Always update the target phase offset - the differential logic is handled in calculate_counter_state */
         p_cpwm->params.phase_offset = phase_offset;
     }
 

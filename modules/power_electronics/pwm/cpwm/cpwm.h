@@ -70,6 +70,9 @@ extern "C"
         float pending_Fs;               /* Pending frequency change */
         bool  frequency_change_pending; /* Flag for pending frequency change */
 
+        /* Phase tracking for incremental changes */
+        float cumulative_phase_applied; /* Total cumulative phase applied in seconds */
+
         /* Internal counter tracking */
         float last_time;        /* Last time step used for internal calculations */
         float internal_counter; /* Internal counter for continuous tracking */
