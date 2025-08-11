@@ -26,7 +26,7 @@ A modular C++ library for power electronics control, designed for seamless QSPIC
    - Or press `Ctrl+Shift+P` → "Tasks: Run Task" → "Build All Modules"
 
 5. **Use in QSPICE**
-   - Generated `.dll` files are in the `build/` directory
+   - Generated `.dll` files are in the `output/` directory
    - Ready for immediate use in your QSPICE simulations
 
 ## 🆘 Troubleshooting
@@ -50,84 +50,101 @@ If you encounter build issues, especially on a new laptop:
 ## Project Structure
 
 ```
-├── modules/                    # All project modules
-│   ├── power_electronics/     # Core power electronics components
-│   │   ├── common/           # Shared constants and definitions
+├── ctrl.dll
+├── README.md
+├── Test.qsch
+├── TROUBLESHOOTING.md
+├── analysis_modules/
+│   ├── README.md
+│   ├── test_dlls.bat
+│   ├── power_electronics/
+│   │   ├── common/
+│   │   │   ├── minimal_dll_test.py
+│   │   │   └── README.md
+│   │   └── filters/
+│   │       └── iir/
+│   │           ├── iir_dll_test.py
+│   │           └── README.md
+│   └── qspice_modules/
+│       └── ctrl/
+│           └── README.md
+├── config/
+│   └── project_config.json
+├── logs/
+│   └── project_cleanup_YYYY-MM-DD_HH-mm-ss.log
+├── modules/
+│   ├── power_electronics/
+│   │   ├── common/
 │   │   │   └── math_constants.h
-│   │   ├── filters/          # Signal processing filters
-│   │   │   └── iir/         # IIR filter implementation
+│   │   ├── filters/
+│   │   │   └── iir/
 │   │   │       ├── iir.h
 │   │   │       ├── iir.cpp
 │   │   │       └── iir.def
-│   │   └── pwm/             # PWM generation modules
-│   │       ├── bpwm/        # Basic PWM with phase shift
+│   │   └── pwm/
+│   │       ├── bpwm/
 │   │       │   ├── bpwm.h
 │   │       │   ├── bpwm.cpp
 │   │       │   └── bpwm.def
-│   │       ├── cpwm/        # Complementary PWM generation
+│   │       ├── cpwm/
 │   │       │   ├── cpwm.h
 │   │       │   ├── cpwm.cpp
 │   │       │   └── cpwm.def
-│   │       └── epwm/        # Enhanced PWM with advanced features
+│   │       └── epwm/
 │   │           ├── epwm.h
 │   │           ├── epwm.cpp
 │   │           └── epwm.def
-│   ├── qspice_modules/        # QSPICE integration modules
-│   │   └── ctrl/             # Control module
+│   ├── qspice_modules/
+│   │   └── ctrl/
 │   │       ├── ctrl.cpp
 │   │       └── ctrl.def
-│   └── templates/            # Module templates for rapid development
-│       ├── power_electronics_template/  # Template for power electronics modules
-│       │   ├── module.h
+│   └── templates/
+│       ├── power_electronics_template/
 │       │   ├── module.c
 │       │   ├── module.def
+│       │   ├── module.h
 │       │   └── TEMPLATE_USAGE.md
-│       └── qspice_template/  # Template for QSPICE modules
+│       └── qspice_template/
 │           ├── qspice_module.cpp
 │           ├── qspice_module.def
 │           └── TEMPLATE_USAGE.md
-├── analysis_modules/          # Testing and analysis tools
-│   ├── power_electronics/     # Power electronics module analysis
-│   │   ├── common/           # Shared utilities and basic tests
-│   │   └── filters/          # Filter analysis tools
-│   │       └── iir/         # IIR filter testing
-│   ├── qspice_modules/        # QSPICE-specific module analysis
-│   │   └── ctrl/            # Control system analysis
-│   ├── test_dlls.bat         # Interactive test launcher
-│   └── README.md             # Analysis documentation
-├── analysis/                  # Additional analysis tools
-│   └── dll_testing/          # DLL testing utilities
-├── config/                    # Configuration files
-│   ├── .clang-format         # Code formatting rules
-│   ├── .clang-tidy          # Static analysis configuration
-│   └── project_config.json   # Centralized project configuration
-├── scripts/                   # Build and utility scripts
-│   ├── build/                # Build-related scripts
-│   │   └── build_all.bat     # Main build script
-│   ├── maintenance/          # Maintenance and cleanup scripts
-│   │   ├── project_cleanup.bat
-│   │   ├── add_macro_parentheses.ps1
-│   │   └── update_dependencies.ps1
-│   ├── diagnostics/          # Diagnostics and validation
-│   │   └── Check-Dependencies.ps1
-│   ├── config/               # Config helpers
-│   │   ├── project_config.py
+├── output/
+│   ├── bpwm.dll
+│   ├── bpwm.obj
+│   ├── cpwm.dll
+│   ├── cpwm.obj
+│   ├── ctrl.dll
+│   ├── ctrl.obj
+│   ├── epwm.dll
+│   ├── epwm.obj
+│   ├── iir.dll
+│   └── iir.obj
+├── scripts/
+│   ├── README.md
+│   ├── build/
+│   │   └── build_all.bat
+│   ├── config/
+│   │   ├── format_json.ps1
 │   │   ├── project_config.bat
-│   │   └── format_json.ps1
-│   ├── setup/                # Setup/install scripts
-│   │   └── setup_compiler.ps1
-│   ├── ProjectConfig.psm1    # Configuration module (PowerShell)
-│   └── README.md             # Scripts documentation
-├── .vscode/                   # VS Code configuration
-│   ├── c_cpp_properties.json # IntelliSense settings
-│   └── tasks.json            # Build tasks
-├── .github/                   # CI/CD workflows
-│   └── workflows/
-│       └── ci.yml            # Continuous integration workflow
-├── build/                     # Build artifacts (auto-generated)
-├── logs/                      # Build and cleanup logs
-├── Test.qsch                  # QSPICE test schematic
-└── backup/                    # Automatic backups during cleanup
+│   │   └── project_config.py
+│   ├── diagnostics/
+│   │   ├── check_dependencies.bat
+│   │   └── Check-Dependencies.ps1
+│   ├── maintenance/
+│   │   ├── add_macro_parentheses.ps1
+│   │   ├── project_cleanup.bat
+│   │   └── update_dependencies.ps1
+│   └── setup/
+│       ├── setup_compiler.bat
+│       └── setup_compiler.ps1
+└── tools/
+   └── Matlab2Qspice/
+      ├── cir2out.m
+      ├── Matlab2Qspice_example_demo.m
+      ├── out_parser.m
+      ├── qraw_parser.m
+      ├── qsch2qraw.m
+      └── README.md
 ```
 
 ## Prerequisites
@@ -226,7 +243,7 @@ Comprehensive build system for all project modules.
 
 **Output:**
 - Individual DLL files for each QSPICE module (e.g., `ctrl.dll`)
-- Build artifacts in `build/` directory
+- Build artifacts in `output/` directory
 - Formatted and quality-checked source code
 
 ### Code Quality and Maintenance Scripts
@@ -465,8 +482,9 @@ The project includes VS Code tasks for seamless development:
 
 **Available Tasks** (Ctrl+Shift+P → "Tasks: Run Task"):
 1. **Setup Compiler** - Automatically download and install Digital Mars Compiler
-2. **Project Cleanup** - Run comprehensive project cleanup including build artifacts, const correctness, and formatting
+2. **Project Cleanup** - Comprehensive project cleanup including build artifacts, const correctness, and formatting
 3. **Build All Modules** - Compile all modules (Default: Ctrl+Shift+B)
+4. **Check Dependencies** - Validate tools and project setup
 
 **IntelliSense Configuration:**
 - Automatic C++ code completion with local compiler headers
@@ -476,20 +494,7 @@ The project includes VS Code tasks for seamless development:
 
 ### Continuous Integration
 
-The project includes GitHub Actions workflow for automated building and testing:
-
-**CI Features:**
-- ✅ Automatic Digital Mars Compiler installation
-- ✅ Build verification for all modules
-- ✅ DLL output validation against project configuration
-- ✅ Cross-platform Windows environment testing
-- ✅ Configuration-driven expected output validation
-
-**Workflow Triggers:**
-- Push to `master` branch
-- Pull requests to `master` branch
-
-**CI Configuration:** `.github/workflows/ci.yml`
+Note: CI configuration is not included in this repository snapshot. You can add a GitHub Actions workflow later if needed.
 
 ### Workflow Recommendations
 
