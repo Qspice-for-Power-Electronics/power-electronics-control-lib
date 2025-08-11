@@ -314,7 +314,7 @@ void cpwm_step(cpwm_t* const p_cpwm, const float t, const bool sync_in)
     calculate_counter_state(p_cpwm, t);
 
     /* Calculate compare values with dead time applied using stored duty_cycle cycle */
-    calculate_compare_values(p_cpwm, 1.0f - p_cpwm->params.duty_cycle);
+    calculate_compare_values(p_cpwm, 1.0F - p_cpwm->params.duty_cycle);
 
     /* Process PWM actions */
     process_pwm_actions(p_cpwm);

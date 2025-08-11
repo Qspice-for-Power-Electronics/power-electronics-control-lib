@@ -77,7 +77,7 @@ The project includes automatic dependency detection. After adding your module to
 
 1. **Run Project Cleanup** (automatically updates dependencies):
    ```powershell
-   .\scripts\project_cleanup.bat
+    .\scripts\maintenance\project_cleanup.bat
    ```
    
    This script will:
@@ -88,7 +88,7 @@ The project includes automatic dependency detection. After adding your module to
 
 2. **Manual Update** (if needed):
    ```powershell
-   .\scripts\update_dependencies.ps1
+    .\scripts\maintenance\update_dependencies.ps1
    ```
 
 #### Manual Method
@@ -239,7 +239,7 @@ debug2 = static_cast<float>(step_counter);
 
 ### 1. Build Test
 ```powershell
-scripts\build_all.bat
+scripts\build\build_all.bat
 ```
 
 ### 2. QSPICE Integration Test
@@ -294,7 +294,7 @@ output = output_state ? 1.0f : 0.0f;
 
 ### Build Issues
 - **Missing dependencies**: Check `#include` statements and project config
-- **Include path errors**: Run `.\scripts\project_cleanup.bat` to auto-update dependencies
+- **Include path errors**: Run `.\scripts\maintenance\project_cleanup.bat` to auto-update dependencies
 - **Module not found**: Verify the dependency module exists in `config/project_config.json`
 - **Export errors**: Verify function name matches .def file
 - **Linking errors**: Ensure all required power electronics modules are built
@@ -330,7 +330,7 @@ output = output_state ? 1.0f : 0.0f;
 ## Getting Help
 
 - **Examples**: Study existing modules in `modules/qspice_modules/`
-- **Build system**: Check `scripts/project_config.py --help`
+- **Build system**: Check `scripts/config/project_config.py --help`
 - **Power electronics**: Review modules in `modules/power_electronics/`
 - Review project documentation in main `README.md`
 - **QSPICE docs**: Refer to QSPICE documentation for interface details
@@ -340,12 +340,12 @@ output = output_state ? 1.0f : 0.0f;
 ### Q: Do I need to manually manage include paths?
 **A: No!** The project includes automatic dependency detection. Simply:
 1. Add your `#include` statements to your source files
-2. Run `.\scripts\project_cleanup.bat` 
+2. Run `.\scripts\maintenance\project_cleanup.bat` 
 3. The script will automatically scan your includes and update dependencies
 
 ### Q: What if I get "file not found" errors during compilation?
 **A: This usually means missing dependencies.** Solutions:
-1. **First try**: Run `.\scripts\project_cleanup.bat` (fixes 90% of cases)
+1. **First try**: Run `.\scripts\maintenance\project_cleanup.bat` (fixes 90% of cases)
 2. **If that fails**: Check that the header file exists in the project
 3. **Manual fix**: Add the missing module to your `dependencies` array
 

@@ -182,9 +182,9 @@ REM STEP 3: Ensure Project is Built (Required for Static Analysis)
 REM ================================================================================
 
 REM Check if project has been compiled (needed for include analysis)
-if not exist build\*.obj (
+if not exist output\*.obj (
     call :log "Project not built - building now for static analysis..."
-    call scripts\build_all.bat
+    call scripts\build\build_all.bat
     if errorlevel 1 (
         call :log "Error: Build failed. Cannot proceed with cleanup."
         call :log "Static analysis requires compiled project for accurate results."
@@ -207,10 +207,10 @@ call :log "Adding parentheses to macro definitions..."
 
 if "!DRY_RUN!"=="true" (
     call :log "Running macro parentheses check in preview mode..."
-    powershell.exe -ExecutionPolicy Bypass -File "scripts\add_macro_parentheses.ps1" -DryRun
+    powershell.exe -ExecutionPolicy Bypass -File "scripts\maintenance\add_macro_parentheses.ps1" -DryRun
 ) else (
     call :log "Applying macro parentheses fixes..."
-    powershell.exe -ExecutionPolicy Bypass -File "scripts\add_macro_parentheses.ps1"
+    powershell.exe -ExecutionPolicy Bypass -File "scripts\maintenance\add_macro_parentheses.ps1"
 )
 
 if errorlevel 1 (
@@ -231,7 +231,7 @@ call :log "=====================================================================
 
 REM Set up clang-tidy flags for automatic fixes and include paths from config
 set CLANG_INCLUDE_PATHS=
-for /f "delims=" %%i in ('scripts\project_config.bat --clang-flags') do (
+for /f "delims=" %%i in ('scripts\config\project_config.bat --clang-flags') do (
     set CLANG_INCLUDE_PATHS=!CLANG_INCLUDE_PATHS! %%i
 )
 
@@ -294,10 +294,10 @@ call :log "Scanning source files for #include dependencies..."
 
 if "!DRY_RUN!"=="true" (
     call :log "Running dependency update in preview mode..."
-    powershell.exe -ExecutionPolicy Bypass -File "scripts\update_dependencies.ps1" -DryRun
+    powershell.exe -ExecutionPolicy Bypass -File "scripts\maintenance\update_dependencies.ps1" -DryRun
 ) else (
     call :log "Updating module dependencies..."
-    powershell.exe -ExecutionPolicy Bypass -File "scripts\update_dependencies.ps1"
+    powershell.exe -ExecutionPolicy Bypass -File "scripts\maintenance\update_dependencies.ps1"
 )
 
 if errorlevel 1 (
@@ -476,12 +476,12 @@ call :log "Formatting JSON configuration files..."
 
 if "!DRY_RUN!"=="true" (
     call :log "Running JSON formatting in preview mode..."
-    powershell.exe -ExecutionPolicy Bypass -File "scripts\format_json.ps1" -DryRun 2>&1 > temp_json_output.txt
+    powershell.exe -ExecutionPolicy Bypass -File "scripts\config\format_json.ps1" -DryRun 2>&1 > temp_json_output.txt
     for /f "delims=" %%i in (temp_json_output.txt) do call :log "  %%i"
     del temp_json_output.txt 2>nul
 ) else (
     call :log "Applying JSON formatting..."
-    powershell.exe -ExecutionPolicy Bypass -File "scripts\format_json.ps1" 2>&1 > temp_json_output.txt
+    powershell.exe -ExecutionPolicy Bypass -File "scripts\config\format_json.ps1" 2>&1 > temp_json_output.txt
     for /f "delims=" %%i in (temp_json_output.txt) do call :log "  %%i"
     del temp_json_output.txt 2>nul
 )
@@ -591,12 +591,12 @@ call :log "=====================================================================
 
 REM Remove all build artifacts and temporary files after processing is complete
 call :log "Cleaning all build artifacts and temporary files..."
-if exist build (
-    rmdir /s /q build
-    call :log "Removed build directory"
+if exist output (
+    rmdir /s /q output
+    call :log "Removed output directory"
 )
 
-REM Delete only QSPICE module DLLs from root directory (keep power electronics DLLs in build/)
+REM Delete only QSPICE module DLLs from root directory (keep power electronics DLLs in output/)
 for /d %%m in (modules\qspice_modules\*) do (
     if exist "%%~nxm.dll" (
         del /f /q "%%~nxm.dll" 2>nul

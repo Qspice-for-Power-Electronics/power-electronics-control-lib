@@ -52,7 +52,7 @@ logs/
 compiler/
 
 # Build artifacts
-build/
+output/
 *.map
 *.exp
 

@@ -76,10 +76,10 @@ if not exist "modules\qspice_modules" (
 REM Check project configuration
 echo.
 echo [5/6] Checking project configuration...
-python scripts\project_config.py --summary >nul 2>&1
+python scripts\config\project_config.py --summary >nul 2>&1
 if errorlevel 1 (
     echo ❌ ERROR: Project configuration validation failed
-    echo    Try running: python scripts\project_config.py --summary
+    echo    Try running: python scripts\config\project_config.py --summary
     set /a ERROR_COUNT+=1
 ) else (
     echo ✅ Project configuration is valid
@@ -89,7 +89,7 @@ REM Check source files
 echo.
 echo [6/6] Checking source files...
 set SOURCE_COUNT=0
-for /f "delims=" %%f in ('python scripts\project_config.py --source-files 2^>nul') do (
+for /f "delims=" %%f in ('python scripts\config\project_config.py --source-files 2^>nul') do (
     if exist "%%f" (
         set /a SOURCE_COUNT+=1
     ) else (

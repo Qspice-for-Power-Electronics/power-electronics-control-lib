@@ -204,7 +204,7 @@ extern "C" __declspec(dllexport) void ctrl(void** opaque, double t, union uData*
         .gate_on_voltage  = 0.0F,
         .gate_off_voltage = 0.0F,
         .sync_enable      = false,
-        .phase_offset     = DEGREES_TO_PHASE_OFFSET(0.0f, cpwm_clk_params.Fs),  // 0 degrees phase offset
+        .phase_offset     = DEGREES_TO_PHASE_OFFSET(0.0F, cpwm_clk_params.Fs),  // 0 degrees phase offset
         .dead_time        = 0.0F,                                               // 0ns dead time
         .duty_cycle       = 0.5F                                                // 50% duty cycle
     };
@@ -219,7 +219,7 @@ extern "C" __declspec(dllexport) void ctrl(void** opaque, double t, union uData*
             .gate_on_voltage  = 1.0F,
             .gate_off_voltage = 0.0F,
             .sync_enable      = false,
-            .phase_offset     = DEGREES_TO_PHASE_OFFSET(0.0f, cpwm_test_params.Fs),  // 0 degrees phase offset
+            .phase_offset     = DEGREES_TO_PHASE_OFFSET(0.0F, cpwm_test_params.Fs),  // 0 degrees phase offset
             .dead_time        = 200e-9F,                                             // 200ns dead time
             .duty_cycle       = 0.0F                                                 // 0% initial duty cycle
         };
@@ -251,7 +251,7 @@ extern "C" __declspec(dllexport) void ctrl(void** opaque, double t, union uData*
     static float sampled_I_2   = 0.0F;  // Sampled I_2 current
     static float sampled_I_2_2 = 0.0F;  // Sampled I_2_2
 
-    static float calculated_duty = 0.0f;  // Example duty cycle, replace with your control logic
+    static float calculated_duty = 0.0F;  // Example duty cycle, replace with your control logic
 
     if (cpwm_clk.outputs.period_sync && !prev_clk)
     {

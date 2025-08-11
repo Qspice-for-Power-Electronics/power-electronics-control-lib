@@ -83,7 +83,7 @@ Add your module to `config/project_config.json`:
    - `step()`: Execute one processing iteration
 
 ### Testing Your Module
-1. Build with the main project: `scripts\build_all.bat`
+1. Build with the main project: `scripts\build\build_all.bat`
 2. Create a simple QSPICE integration using the provided template
 3. Test in QSPICE simulation environment
 
@@ -139,4 +139,4 @@ Use the included `qspice_module_template.cpp` as a starting point for creating Q
 ### Getting Help
 - Check existing modules in `modules/power_electronics/` for examples
 - Review project documentation in main `README.md`
-- Use project configuration tools: `scripts\project_config.py --help`
+- Use project configuration tools: `python scripts\config\project_config.py --help`

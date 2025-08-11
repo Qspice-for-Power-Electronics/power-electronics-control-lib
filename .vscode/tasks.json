@@ -44,7 +44,7 @@
 			"command": "powershell.exe",
 			"args": [
 				"-ExecutionPolicy", "Bypass",
-				"-File", "${workspaceFolder}/scripts/setup_compiler.ps1"
+				"-File", "${workspaceFolder}/scripts/setup/setup_compiler.ps1"
 			],
 			"group": "build",
 			"presentation": {
@@ -73,7 +73,7 @@
             // Note: Runs in dry-run mode by default (preview changes only)
 			"label": "Project Cleanup",
 			"type": "shell",
-			"command": "${workspaceFolder}/scripts/project_cleanup.bat",
+			"command": "${workspaceFolder}/scripts/maintenance/project_cleanup.bat",
 			"group": "build",
 			"presentation": {
 				"echo": true,
@@ -91,7 +91,7 @@
             // Requirements: Digital Mars Compiler (DMC) must be in PATH
 			"label": "Build All Modules",
 			"type": "shell",
-			"command": "${workspaceFolder}/scripts/build_all.bat",
+			"command": "${workspaceFolder}/scripts/build/build_all.bat",
 			"group": {
 				"kind": "build",
 				"isDefault": true
@@ -122,7 +122,7 @@
 			"command": "powershell.exe",
 			"args": [
 				"-ExecutionPolicy", "Bypass",
-				"-File", "${workspaceFolder}/scripts/Check-Dependencies.ps1"
+				"-File", "${workspaceFolder}/scripts/diagnostics/Check-Dependencies.ps1"
 			],
 			"group": "build",
 			"presentation": {

@@ -1,15 +1,16 @@
 # Power Electronics Control Library - Troubleshooting Guide
 
-## **Why Build Fails to Find Modules on Different Laptops**
+## Overview
 
-This guide explains the common reasons why the build system might fail to find modules from project config on a different laptop and provides step-by-step solutions.
+Use this guide to diagnose and fix build/runtime issues in this project on Windows.
 
 ## **🔍 Quick Diagnosis**
 
 Run this command first to identify the exact issues:
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts\Check-Dependencies.ps1
+powershell -ExecutionPolicy Bypass -File scripts\diagnostics\Check-Dependencies.ps1
 ```
+Or in VS Code: run the "Check Dependencies" task.
 
 ## **🚨 Common Issues & Solutions**
 
@@ -22,9 +23,9 @@ powershell -ExecutionPolicy Bypass -File scripts\Check-Dependencies.ps1
 
 **Solutions:**
 - **Option A (Automatic)**: Run the setup script as Administrator:
-  ```powershell
-  powershell -ExecutionPolicy Bypass -File scripts\Setup-NewLaptop.ps1
-  ```
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File scripts\setup\setup_compiler.ps1
+   ```
 - **Option B (VS Code Task)**: Run the "Setup Compiler" task in VS Code
 - **Option C (Manual)**: Download from https://digitalmars.com/download/freecompiler.exe
 
@@ -61,7 +62,10 @@ Even after installing DMC/LLVM, VS Code still reports "not found"
 #### **Problem**: Path separator issues (Windows vs Linux/Mac)
 Project config uses forward slashes but Windows needs backslashes
 
-**Solution**: ✅ **FIXED** - The `project_config.py` script now automatically converts path separators
+Note: `project_config.py` converts separators automatically. If you still see path issues, verify resolved paths:
+```powershell
+python scripts\config\project_config.py --summary
+```
 
 ### **3. Project Configuration Issues**
 
@@ -70,10 +74,17 @@ Project config uses forward slashes but Windows needs backslashes
 json.decoder.JSONDecodeError: Expecting value
 ```
 
-**Causes & Solutions:**
-- **BOM encoding**: ✅ **FIXED** - Script now handles UTF-8 with/without BOM
-- **Null values**: ✅ **FIXED** - Script now handles `null` sources/headers properly
-- **Missing author field**: ✅ **FIXED** - Script now reads author from metadata
+Actions:
+- Validate JSON and normalize formatting:
+   ```powershell
+   python scripts\config\project_config.py --summary
+   ```
+- If encoding issues are suspected, re-save as UTF-8 (no BOM) or run:
+   ```powershell
+   scripts\config\format_json.ps1
+   ```
+- Ensure optional fields (like sources/headers) aren’t null unless supported.
+- Confirm required metadata fields exist in `config/project_config.json`.
 
 #### **Problem**: Module files not found
 ```
@@ -87,7 +98,7 @@ json.decoder.JSONDecodeError: Expecting value
    ```
 2. **Verify config matches actual files**:
    ```powershell
-   python scripts\project_config.py --source-files
+   python scripts\config\project_config.py --source-files
    ```
 
 ### **4. File System and Permissions**
@@ -98,7 +109,7 @@ json.decoder.JSONDecodeError: Expecting value
 #### **Problem**: Case sensitivity issues (Git on Windows)
 **Solution**: Configure Git properly:
 ```bash
-git config core.ignorecase false
+git config --global core.ignorecase false
 ```
 
 ### **5. Working Directory Issues**
@@ -108,48 +119,18 @@ git config core.ignorecase false
 ```powershell
 # Correct
 cd d:\Projects\WPT\last
-scripts\build_all.bat
+scripts\build\build_all.bat
 
 # Wrong
 cd scripts
 .\build_all.bat
 ```
 
-## **🛠️ Step-by-Step Setup for New Laptop**
-
-### **Method 1: Automated Setup (Recommended)**
-```powershell
-# 1. Run VS Code as Administrator
-# 2. Open project in VS Code
-# 3. Check dependencies first
-powershell scripts\setup_compiler.ps1 -CheckOnly
-
-# 4. Run full setup if needed
-powershell scripts\setup_compiler.ps1
-
-# 5. Restart VS Code completely
-# 6. Verify setup
-powershell scripts\Check-Dependencies.ps1
-
-# 7. Build project
-scripts\build_all.bat
-```
-
-### **Method 2: Manual Setup**
-```powershell
-# 1. Install Python 3.6+ (add to PATH)
-# 2. Install Digital Mars Compiler
-# 3. Install LLVM/Clang tools
-# 4. Restart VS Code as Administrator
-# 5. Run dependency check
-powershell scripts\Check-Dependencies.ps1
-```
-
-### **Method 3: VS Code Tasks**
-1. Run "Setup Compiler" task (includes dependency check and full setup)
-2. Restart VS Code completely
-3. Run "Check Dependencies" task to verify
-4. Run "Build All Modules" task
+## **🛠️ Quick Tasks in VS Code**
+Use the Tasks panel for common troubleshooting:
+1. "Check Dependencies" — validate environment and tools
+2. "Project Cleanup" — clean build artifacts and refresh formatting
+3. "Build All Modules" — rebuild after issues are resolved
 
 ## **🔧 Validation Commands**
 
@@ -157,25 +138,25 @@ Use these commands to verify your setup:
 
 ```powershell
 # Check all dependencies
-powershell scripts\Check-Dependencies.ps1
+powershell -ExecutionPolicy Bypass -File scripts\diagnostics\Check-Dependencies.ps1
 
 # Check dependencies only (no installation)
-powershell scripts\setup_compiler.ps1 -CheckOnly
+powershell -ExecutionPolicy Bypass -File scripts\setup\setup_compiler.ps1 -CheckOnly
 
 # Full setup with options
-powershell scripts\setup_compiler.ps1          # Full setup
-powershell scripts\setup_compiler.ps1 -Force   # Force reinstall
-powershell scripts\setup_compiler.ps1 -SkipDMC # Skip DMC installation
-powershell scripts\setup_compiler.ps1 -SkipLLVM # Skip LLVM installation
+powershell -ExecutionPolicy Bypass -File scripts\setup\setup_compiler.ps1           # Full setup
+powershell -ExecutionPolicy Bypass -File scripts\setup\setup_compiler.ps1 -Force    # Force reinstall
+powershell -ExecutionPolicy Bypass -File scripts\setup\setup_compiler.ps1 -SkipDMC  # Skip DMC installation
+powershell -ExecutionPolicy Bypass -File scripts\setup\setup_compiler.ps1 -SkipLLVM # Skip LLVM installation
 
 # Test project configuration
-python scripts\project_config.py --summary
+python scripts\config\project_config.py --summary
 
 # List include paths
-python scripts\project_config.py --include-paths
+python scripts\config\project_config.py --include-paths
 
 # List source files
-python scripts\project_config.py --source-files
+python scripts\config\project_config.py --source-files
 
 # Check if tools are in PATH
 where python
@@ -184,6 +165,14 @@ where clang-format
 
 # Verify module files exist
 Get-ChildItem modules -Recurse -Name "*.cpp"
+
+# Optional: Clean up artifacts and re-run checks
+scripts\maintenance\project_cleanup.bat
+powershell -ExecutionPolicy Bypass -File scripts\diagnostics\Check-Dependencies.ps1
+
+# Quick DLL smoke tests (after building)
+analysis_modules\test_dlls.bat
+python analysis_modules\power_electronics\common\minimal_dll_test.py
 ```
 
 ## **📋 Pre-Build Checklist**
@@ -204,7 +193,7 @@ Before building on a new laptop, verify:
    ```powershell
    # Remove C:\dm directory
    # Uninstall Python and LLVM
-   # Run Setup-NewLaptop.ps1 again
+   # Run scripts\setup\setup_compiler.ps1 again
    ```
 
 2. **Manual path verification**:
@@ -220,18 +209,12 @@ Before building on a new laptop, verify:
    dmc -mn -w -wx -ws -I"..\modules\power_electronics\common" ..\modules\qspice_modules\ctrl\ctrl.cpp
    ```
 
-## **💡 Prevention Tips**
-
-- Always use the dependency checker before building
-- Keep setup scripts updated for new team members
-- Document any manual installation steps
-- Use version control for configuration files
-- Test setup process on clean virtual machines
+ 
 
 ## **🔗 Related Files**
 
-- `scripts/Check-Dependencies.ps1` - Dependency validation
-- `scripts/setup_compiler.ps1` - Enhanced setup with dependency checking  
-- `scripts/project_config.py` - Configuration parser  
+- `scripts/diagnostics/Check-Dependencies.ps1` - Dependency validation
+- `scripts/setup/setup_compiler.ps1` - Enhanced setup with dependency checking  
+- `scripts/config/project_config.py` - Configuration parser  
 - `config/project_config.json` - Project configuration
-- `scripts/build_all.bat` - Main build script
+- `scripts/build/build_all.bat` - Main build script

@@ -41,7 +41,7 @@ REM
 REM OUTPUT:
 REM - Individual DLL files for each power electronics module (e.g., iir.dll, bpwm.dll, epwm.dll)
 REM - Individual DLL files for each QSPICE module (e.g., ctrl.dll)
-REM - Build artifacts in build/ directory
+REM - Build artifacts in output/ directory
 REM
 REM USAGE:
 REM   .\build_all.bat
@@ -53,7 +53,7 @@ setlocal enabledelayedexpansion
 
 REM Initialize error tracking and build configuration
 set ERROR_COUNT=0
-set BUILD_DIR=build
+set BUILD_DIR=output
 
 REM ================================================================================
 REM STEP 1: Validate Required Tools
@@ -176,7 +176,7 @@ set COMMON_FLAGS=-mn -w -wx -ws
 REM Get include paths from project configuration
 REM This uses the centralized config/project_config.json file
 set INCLUDE_PATHS=
-for /f "delims=" %%i in ('scripts\project_config.bat --include-paths') do (
+for /f "delims=" %%i in ('scripts\config\project_config.bat --include-paths') do (
     set INCLUDE_PATHS=!INCLUDE_PATHS! -I"..\%%i"
 )
 
@@ -291,7 +291,7 @@ REM ============================================================================
 REM Return to original directory
 popd
 
-REM Copy only QSPICE module DLLs to root directory (power electronics DLLs stay in build/)
+REM Copy only QSPICE module DLLs to root directory (power electronics DLLs stay in output/)
 if !ERROR_COUNT! equ 0 (
     echo Copying QSPICE module DLLs to root directory...
     set DLL_COUNT=0
@@ -310,7 +310,7 @@ if !ERROR_COUNT! equ 0 (
     )
     echo Build completed successfully. Built !DLL_COUNT! total modules.
     echo Copied !QSPICE_DLL_COUNT! QSPICE module DLLs to root directory.
-    echo Power electronics module DLLs remain in build/ directory.
+    echo Power electronics module DLLs remain in output/ directory.
     echo QSPICE module DLL files are ready for use in simulations.
 ) else (
     echo Build failed with !ERROR_COUNT! errors

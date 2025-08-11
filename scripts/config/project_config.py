@@ -40,10 +40,10 @@ OUTPUT FORMATS:
 - Clang flags: Formatted flags for static analysis tools
 
 USAGE:
-    python scripts/project_config.py --include-paths    # Get include paths
-    python scripts/project_config.py --source-files     # Get all source files
-    python scripts/project_config.py --build-order      # Get build order
-    python scripts/project_config.py --clang-flags      # Get clang-tidy flags
+    python scripts/config/project_config.py --include-paths    # Get include paths
+    python scripts/config/project_config.py --source-files     # Get all source files
+    python scripts/config/project_config.py --build-order      # Get build order
+    python scripts/config/project_config.py --clang-flags      # Get clang-tidy flags
 
 ================================================================================
 """
@@ -88,8 +88,13 @@ class ProjectConfig:
         
         # Add configured include paths
         for path in self.config["build_config"]["include_paths"]:
-            # Convert forward slashes to OS-appropriate separators
-            include_paths.append(str(self.root_path / Path(path)))
+            # Handle wildcards in include paths
+            if "**" in path:
+                # Skip wildcard paths - they will be handled by adding specific module directories
+                continue
+            else:
+                # Convert forward slashes to OS-appropriate separators
+                include_paths.append(str(self.root_path / Path(path)))
         
         # Add all module header directories
         for module_type in self.config["modules"]:

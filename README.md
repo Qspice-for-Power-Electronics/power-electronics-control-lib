@@ -19,7 +19,7 @@ A modular C++ library for power electronics control, designed for seamless QSPIC
 
 3. **Setup compiler automatically**
    - Press `Ctrl+Shift+P` → "Tasks: Run Task" → "Setup Compiler"
-   - Or run: `scripts\setup_compiler.bat`
+   - Or run: `./scripts/setup/setup_compiler.ps1`
 
 4. **Build everything**
    - Press `Ctrl+Shift+B` (default build task)
@@ -35,12 +35,12 @@ If you encounter build issues, especially on a new laptop:
 
 1. **Quick diagnosis**: Run the dependency checker
    ```powershell
-   powershell scripts\Check-Dependencies.ps1
+   powershell scripts\diagnostics\Check-Dependencies.ps1
    ```
 
 2. **Automated setup**: For new laptops, run the enhanced setup script as Administrator
    ```powershell
-   powershell scripts\setup_compiler.ps1
+   powershell scripts\setup\setup_compiler.ps1
    ```
 
 3. **Common issues**: Missing DMC compiler, Python, or clang-format in PATH
@@ -102,15 +102,20 @@ If you encounter build issues, especially on a new laptop:
 │   ├── .clang-tidy          # Static analysis configuration
 │   └── project_config.json   # Centralized project configuration
 ├── scripts/                   # Build and utility scripts
-│   ├── build_all.bat         # Main build script
-│   ├── project_cleanup.bat   # Comprehensive code cleanup and quality
-│   ├── setup_compiler.ps1    # Automatic Digital Mars Compiler installation
-│   ├── setup_compiler.bat    # Batch wrapper for compiler setup
-│   ├── add_macro_parentheses.ps1  # Macro safety improvements
-│   ├── update_dependencies.ps1    # Automatic dependency detection
-│   ├── format_json.ps1       # JSON/JSONC formatting utility
-│   ├── project_config.py     # Configuration parser (Python)
-│   ├── project_config.bat    # Configuration wrapper (Batch)
+│   ├── build/                # Build-related scripts
+│   │   └── build_all.bat     # Main build script
+│   ├── maintenance/          # Maintenance and cleanup scripts
+│   │   ├── project_cleanup.bat
+│   │   ├── add_macro_parentheses.ps1
+│   │   └── update_dependencies.ps1
+│   ├── diagnostics/          # Diagnostics and validation
+│   │   └── Check-Dependencies.ps1
+│   ├── config/               # Config helpers
+│   │   ├── project_config.py
+│   │   ├── project_config.bat
+│   │   └── format_json.ps1
+│   ├── setup/                # Setup/install scripts
+│   │   └── setup_compiler.ps1
 │   ├── ProjectConfig.psm1    # Configuration module (PowerShell)
 │   └── README.md             # Scripts documentation
 ├── .vscode/                   # VS Code configuration
@@ -181,27 +186,27 @@ scripts\setup_compiler.bat
 ### Quick Start
 ```powershell
 # Build everything
-.\scripts\build_all.bat
+.\scripts\build\build_all.bat
 
 # Run comprehensive project cleanup and quality improvements
-.\scripts\project_cleanup.bat
+.\scripts\maintenance\project_cleanup.bat
 
 # Preview cleanup changes without modifying files  
-.\scripts\project_cleanup.bat --dry-run
+.\scripts\maintenance\project_cleanup.bat --dry-run
 
 # View project configuration
-python scripts\project_config.py --summary
+python scripts\config\project_config.py --summary
 
 # Update module dependencies automatically
-.\scripts\update_dependencies.ps1
+.\scripts\maintenance\update_dependencies.ps1
 
 # Format JSON configuration files
-.\scripts\format_json.ps1
+.\scripts\config\format_json.ps1
 ```
 
 ### Build System
 
-#### `scripts\build_all.bat` - Main Build Script
+#### `scripts\build\build_all.bat` - Main Build Script
 Comprehensive build system for all project modules.
 
 **Features:**
@@ -216,7 +221,7 @@ Comprehensive build system for all project modules.
 
 **Usage:**
 ```powershell
-.\scripts\build_all.bat
+.\scripts\build\build_all.bat
 ```
 
 **Output:**
@@ -226,7 +231,7 @@ Comprehensive build system for all project modules.
 
 ### Code Quality and Maintenance Scripts
 
-#### `scripts\project_cleanup.bat` - Comprehensive Project Cleanup
+#### `scripts\maintenance\project_cleanup.bat` - Comprehensive Project Cleanup
 Advanced code cleanup and quality improvement tool with automatic fixes and dependency management.
 
 **Features:**
@@ -247,10 +252,10 @@ Advanced code cleanup and quality improvement tool with automatic fixes and depe
 **Usage:**
 ```powershell
 # Preview changes without modifying files
-.\scripts\project_cleanup.bat --dry-run
+.\scripts\maintenance\project_cleanup.bat --dry-run
 
 # Apply all automatic fixes and improvements
-.\scripts\project_cleanup.bat
+.\scripts\maintenance\project_cleanup.bat
 ```
 
 **Phase-by-Phase Processing:**
@@ -278,7 +283,7 @@ Advanced code cleanup and quality improvement tool with automatic fixes and depe
 - Detailed quality report showing remaining issues
 - Comprehensive logs in `logs/` directory
 
-#### `scripts\add_macro_parentheses.ps1` - Macro Safety Utility
+#### `scripts\maintenance\add_macro_parentheses.ps1` - Macro Safety Utility
 Standalone PowerShell script for adding parentheses around `#define` values.
 
 **Features:**
@@ -292,10 +297,10 @@ Standalone PowerShell script for adding parentheses around `#define` values.
 **Usage:**
 ```powershell
 # Preview changes without modifying files
-.\scripts\add_macro_parentheses.ps1 -DryRun
+.\scripts\maintenance\add_macro_parentheses.ps1 -DryRun
 
 # Apply parentheses fixes
-.\scripts\add_macro_parentheses.ps1
+.\scripts\maintenance\add_macro_parentheses.ps1
 ```
 
 **Example Transformations:**
@@ -309,7 +314,7 @@ Standalone PowerShell script for adding parentheses around `#define` values.
 #define CALC_POWER (voltage * current)
 ```
 
-#### `scripts\update_dependencies.ps1` - Automatic Dependency Management
+#### `scripts\maintenance\update_dependencies.ps1` - Automatic Dependency Management
 PowerShell script that automatically detects and updates module dependencies by scanning `#include` statements.
 
 **Features:**
@@ -323,13 +328,13 @@ PowerShell script that automatically detects and updates module dependencies by 
 **Usage:**
 ```powershell
 # Preview dependency changes
-.\scripts\update_dependencies.ps1 -DryRun
+.\scripts\maintenance\update_dependencies.ps1 -DryRun
 
 # Update dependencies automatically
-.\scripts\update_dependencies.ps1
+.\scripts\maintenance\update_dependencies.ps1
 
 # Enable detailed logging
-.\scripts\update_dependencies.ps1 -Verbose
+.\scripts\maintenance\update_dependencies.ps1 -Verbose
 ```
 
 **Detection Logic:**
@@ -338,7 +343,7 @@ PowerShell script that automatically detects and updates module dependencies by 
 - Handles both relative and absolute include paths
 - Updates build order based on dependency relationships
 
-#### `scripts\format_json.ps1` - JSON Configuration Formatter
+#### `scripts\config\format_json.ps1` - JSON Configuration Formatter
 PowerShell utility for formatting JSON and JSONC files with consistent indentation.
 
 **Features:**
@@ -351,13 +356,13 @@ PowerShell utility for formatting JSON and JSONC files with consistent indentati
 **Usage:**
 ```powershell
 # Preview formatting changes
-.\scripts\format_json.ps1 -DryRun
+.\scripts\config\format_json.ps1 -DryRun
 
 # Apply formatting to all JSON files
-.\scripts\format_json.ps1
+.\scripts\config\format_json.ps1
 ```
 
-#### `scripts\setup_compiler.ps1` - Automatic Compiler Installation
+#### `scripts\setup\setup_compiler.ps1` - Automatic Compiler Installation
 PowerShell script for automatic Digital Mars Compiler installation and configuration.
 
 **Features:**
@@ -371,13 +376,13 @@ PowerShell script for automatic Digital Mars Compiler installation and configura
 **Usage:**
 ```powershell
 # Interactive installation
-.\scripts\setup_compiler.ps1
+.\scripts\setup\setup_compiler.ps1
 
 # Quiet installation for automation
-.\scripts\setup_compiler.ps1 -Quiet
+.\scripts\setup\setup_compiler.ps1 -Quiet
 
 # Force re-download even if already installed
-.\scripts\setup_compiler.ps1 -Force
+.\scripts\setup\setup_compiler.ps1 -Force
 ```
 
 ### Project Configuration System
@@ -392,7 +397,7 @@ Single source of truth for all project settings, paths, and module definitions.
 - Tool configurations (clang-format, clang-tidy settings)
 - File patterns and build order
 
-#### `scripts\project_config.py` - Configuration Parser
+#### `scripts\config\project_config.py` - Configuration Parser
 Python utility for accessing project configuration programmatically.
 
 **Features:**
@@ -405,35 +410,35 @@ Python utility for accessing project configuration programmatically.
 **Usage:**
 ```powershell
 # Show project summary
-python scripts\project_config.py --summary
+python scripts\config\project_config.py --summary
 
 # Get include paths
-python scripts\project_config.py --include-paths
+python scripts\config\project_config.py --include-paths
 
 # Get all source files
-python scripts\project_config.py --source-files
+python scripts\config\project_config.py --source-files
 
 # Get compiler flags
-python scripts\project_config.py --compiler-flags
+python scripts\config\project_config.py --compiler-flags
 
 # Get clang-tidy flags
-python scripts\project_config.py --clang-flags
+python scripts\config\project_config.py --clang-flags
 
 # Filter by module type
-python scripts\project_config.py --source-files --module-type power_electronics
+python scripts\config\project_config.py --source-files --module-type power_electronics
 
 # Get QSPICE modules
-python scripts\project_config.py --qspice-modules
+python scripts\config\project_config.py --qspice-modules
 ```
 
-#### `scripts\project_config.bat` - Windows Batch Wrapper
+#### `scripts\config\project_config.bat` - Windows Batch Wrapper
 Provides easy access to configuration from batch scripts.
 
 **Usage:**
 ```powershell
 # Used internally by build scripts
-scripts\project_config.bat --include-paths
-scripts\project_config.bat --compiler-flags
+scripts\config\project_config.bat --include-paths
+scripts\config\project_config.bat --compiler-flags
 ```
 
 #### `scripts\ProjectConfig.psm1` - PowerShell Module
@@ -490,34 +495,34 @@ The project includes GitHub Actions workflow for automated building and testing:
 
 #### Daily Development
 1. **Code normally** in VS Code with IntelliSense
-2. **Build frequently:** `Ctrl+Shift+B` or `.\scripts\build_all.bat`
+2. **Build frequently:** `Ctrl+Shift+B` or `.\scripts\build\build_all.bat`
 3. **Test in QSPICE** using generated DLL files
 
 #### Before Committing
-1. **Preview cleanup:** `.\scripts\project_cleanup.bat --dry-run`
-2. **Apply fixes:** `.\scripts\project_cleanup.bat`
-3. **Build and test:** `.\scripts\build_all.bat`
+1. **Preview cleanup:** `.\scripts\maintenance\project_cleanup.bat --dry-run`
+2. **Apply fixes:** `.\scripts\maintenance\project_cleanup.bat`
+3. **Build and test:** `.\scripts\build\build_all.bat`
 4. **Review changes:** `git diff`
 5. **Commit:** Clean, formatted, and quality-checked code
 
 #### Adding New Modules
 1. **Use templates:** Copy from `modules/templates/` for quick start
 2. **Update configuration:** Edit `config\project_config.json` or use auto-detection
-3. **Update dependencies:** Run `.\scripts\update_dependencies.ps1`
+3. **Update dependencies:** Run `.\scripts\maintenance\update_dependencies.ps1`
 4. **Build automatically:** Configuration system handles the rest
 
 #### Maintaining Code Quality
-1. **Regular cleanup:** Run `.\scripts\project_cleanup.bat` periodically
+1. **Regular cleanup:** Run `.\scripts\maintenance\project_cleanup.bat` periodically
 2. **Monitor logs:** Check `logs/` directory for detailed analysis
 3. **Review backups:** Check `backup/` directory before major changes
-4. **Validate dependencies:** Use `.\scripts\update_dependencies.ps1 -Verbose`
+4. **Validate dependencies:** Use `.\scripts\maintenance\update_dependencies.ps1 -Verbose`
 
 ## Building
 ## Quick Build
 
 For immediate use, just run:
 ```powershell
-.\scripts\build_all.bat
+.\scripts\build\build_all.bat
 ```
 
 This will automatically:
@@ -552,10 +557,10 @@ Rename-Item "module.def" "your_module_name.def"
 # Search and replace all [REPLACE: ...] markers with your specific content
 
 # 4. Update dependencies automatically
-.\scripts\update_dependencies.ps1
+.\scripts\maintenance\update_dependencies.ps1
 
 # 5. Build and test
-.\scripts\build_all.bat
+.\scripts\build\build_all.bat
 ```
 
 #### Using QSPICE Template
@@ -567,8 +572,8 @@ Copy-Item -Recurse "modules\templates\qspice_template" "modules\qspice_modules\y
 # Edit files and replace template markers
 
 # 3. Update configuration and build
-.\scripts\update_dependencies.ps1
-.\scripts\build_all.bat
+.\scripts\maintenance\update_dependencies.ps1
+.\scripts\build\build_all.bat
 ```
 
 ### Configuration Options
@@ -578,7 +583,7 @@ The project uses a centralized configuration system in `config/project_config.js
 ### Option A: Automatic Detection (Recommended)
 1. **Create module structure following existing patterns**
 2. **Build automatically** - the system will detect new modules
-3. **Update dependencies** - run `.\scripts\update_dependencies.ps1`
+3. **Update dependencies** - run `.\scripts\maintenance\update_dependencies.ps1`
 4. **Update configuration** if you want explicit control
 
 ### Option B: Explicit Configuration  
@@ -643,7 +648,7 @@ QSPICE modules are the final DLL outputs used in QSPICE simulations.
    ```
 
 3. **Build automatically:**
-   - Run `.\scripts\build_all.bat`
+   - Run `.\scripts\build\build_all.bat`
    - Script detects new module automatically
    - Creates `your_module.dll` in root directory
    - Proper dependency linking handled automatically
@@ -659,7 +664,7 @@ QSPICE modules are the final DLL outputs used in QSPICE simulations.
 **Configuration Management:**
 - **Preferred:** Update `config/project_config.json` for explicit control
 - **Alternative:** Follow naming patterns for automatic detection
-- **Dependencies:** Use `.\scripts\update_dependencies.ps1` for automatic updates
+- **Dependencies:** Use `.\scripts\maintenance\update_dependencies.ps1` for automatic updates
 - Use configuration system for complex dependencies
 
 **File Naming:**
@@ -684,19 +689,19 @@ QSPICE modules are the final DLL outputs used in QSPICE simulations.
 **Testing Configuration:**
 ```powershell
 # Verify your module is detected
-python scripts\project_config.py --summary
+python scripts\config\project_config.py --summary
 
 # Check include paths
-python scripts\project_config.py --include-paths
+python scripts\config\project_config.py --include-paths
 
 # Update and verify dependencies  
-.\scripts\update_dependencies.ps1 -Verbose
+.\scripts\maintenance\update_dependencies.ps1 -Verbose
 
 # Verify QSPICE modules  
-python scripts\project_config.py --qspice-modules
+python scripts\config\project_config.py --qspice-modules
 
 # Run comprehensive quality check
-.\scripts\project_cleanup.bat --dry-run
+.\scripts\maintenance\project_cleanup.bat --dry-run
 ```
 
 ## Modules
@@ -735,7 +740,7 @@ python scripts\project_config.py --qspice-modules
 - Automatic formatting with clang-format
 - Configuration in `config/.clang-format`
 - Static analysis with clang-tidy (config in `config/.clang-tidy`)
-- Comprehensive quality checks via `.\scripts\project_cleanup.bat`
+- Comprehensive quality checks via `.\scripts\maintenance\project_cleanup.bat`
 
 ### Module Structure
 - Keep modules self-contained in their directories

@@ -251,7 +251,7 @@ function Test-Dependencies {
             Write-Status "[OK] Found: project_config.json" "Green"
             
             # Test Python config parser
-            $configTest = python scripts\project_config.py --summary 2>&1
+            $configTest = python scripts\config\project_config.py --summary 2>&1
             if ($LASTEXITCODE -eq 0) {
                 Write-Status "[OK] Project configuration is valid" "Green"
             }
@@ -650,14 +650,14 @@ function Test-PythonInstallation {
             
             # Test if we can run the project config script
             try {
-                $configTest = python scripts\project_config.py --summary 2>&1
+                $configTest = python scripts\config\project_config.py --summary 2>&1
                 if ($LASTEXITCODE -eq 0) {
                     Write-Status "[OK] Python can run project configuration scripts" "Green"
                     return $true
                 }
                 else {
                     Write-Status "[ERROR] Python found but project scripts fail" "Red"
-                    Write-Status "   Check if scripts/project_config.py exists" "Yellow"
+                    Write-Status "   Check if scripts/config/project_config.py exists" "Yellow"
                     return $false
                 }
             }

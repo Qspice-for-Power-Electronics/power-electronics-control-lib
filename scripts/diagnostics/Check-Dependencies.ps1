@@ -140,12 +140,12 @@ if (Test-Path "modules\qspice_modules") {
 Write-Host ""
 Write-Host "[6/7] Checking project configuration..." -ForegroundColor Yellow
 try {
-    $configTest = python scripts\project_config.py --summary 2>&1
+    $configTest = python scripts\config\project_config.py --summary 2>&1
     if ($LASTEXITCODE -eq 0) {
         Write-Host "[OK] Project configuration is valid" -ForegroundColor Green
     } else {
         Write-Host "[ERROR] Project configuration validation failed" -ForegroundColor Red
-        Write-Host "   Try running: python scripts\project_config.py --summary" -ForegroundColor Yellow
+        Write-Host "   Try running: python scripts\config\project_config.py --summary" -ForegroundColor Yellow
         $ErrorCount++
     }
 } catch {
@@ -157,7 +157,7 @@ try {
 Write-Host ""
 Write-Host "[7/7] Checking source files..." -ForegroundColor Yellow
 try {
-    $sourceFiles = python scripts\project_config.py --source-files 2>&1
+    $sourceFiles = python scripts\config\project_config.py --source-files 2>&1
     if ($LASTEXITCODE -eq 0) {
         $sourceCount = 0
         $sourceFiles -split "`n" | ForEach-Object {

@@ -26,18 +26,18 @@ REM 2. Calls the Python configuration parser with specified options
 REM 3. Returns configuration data for use in other batch scripts
 REM
 REM USAGE:
-REM   .\scripts\project_config.bat --include-paths     (get include paths)
-REM   .\scripts\project_config.bat --source-files      (get source files)
-REM   .\scripts\project_config.bat --compiler-flags    (get compiler flags)
-REM   .\scripts\project_config.bat --clang-flags       (get clang-tidy flags)
-REM   .\scripts\project_config.bat --summary           (show project summary)
+REM   .\scripts\config\project_config.bat --include-paths     (get include paths)
+REM   .\scripts\config\project_config.bat --source-files      (get source files)
+REM   .\scripts\config\project_config.bat --compiler-flags    (get compiler flags)
+REM   .\scripts\config\project_config.bat --clang-flags       (get clang-tidy flags)
+REM   .\scripts\config\project_config.bat --summary           (show project summary)
 REM
 REM EXAMPLES:
 REM   REM Get include paths for compiler
-REM   for /f %%i in ('scripts\project_config.bat --include-paths') do set INCLUDE_PATH=%%i
+REM   for /f %%i in ('scripts\config\project_config.bat --include-paths') do set INCLUDE_PATH=%%i
 REM   
 REM   REM Get all source files for processing
-REM   for /f %%f in ('scripts\project_config.bat --source-files') do echo Processing %%f
+REM   for /f %%f in ('scripts\config\project_config.bat --source-files') do echo Processing %%f
 REM
 REM ================================================================================
 
@@ -61,13 +61,13 @@ if not exist "config\project_config.json" (
 )
 
 REM Check if Python parser exists
-if not exist "scripts\project_config.py" (
+if not exist "scripts\config\project_config.py" (
     echo Error: Project configuration parser not found
-    echo Expected: scripts\project_config.py
+    echo Expected: scripts\config\project_config.py
     echo Please ensure the parser script exists
     exit /b 1
 )
 
 REM Call Python parser with all arguments
-python scripts\project_config.py %*
+python scripts\config\project_config.py %*
 exit /b %errorlevel%

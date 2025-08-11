@@ -15,7 +15,7 @@
 	"paths":  {
 		"root":  ".",
 		"modules":  "modules",
-		"build":  "build",
+		"build":  "output",
 		"config":  "config",
 		"scripts":  "scripts",
 		"backup":  "backup"
